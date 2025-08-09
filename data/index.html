@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 LED Control</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+    button {
+      font-size: 1.5rem;
+      padding: 15px 30px;
+      margin: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      width: 100%;
+      max-width: 300px;
+      box-sizing: border-box;
+    }
+    button.on {
+      background-color: #4CAF50;
+    }
+    button.off {
+      background-color: #f44336;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    
+
+    /* Адаптация для мобильных устройств */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+      button {
+        font-size: 1.2rem;
+        padding: 12px 25px;
+        margin: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>ESP32 LED Control</h1>
+  <p>LED is currently <span id="led-state">OFF</span></p>
+  <button class="on" onclick="sendRequest('/led/on')">Turn ON</button>
+  <button class="off" onclick="sendRequest('/led/off')">Turn OFF</button>
+  <p>Ambient Light: <span id="ambient-light">Loading...</span></p> <!-- Отображение данных освещенности -->
+
+
+  <script>
+    function sendRequest(url) {
+      fetch(url, { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('led-state').innerText = data.includes('ON') ? 'ON' : 'OFF';
+        });
+    }
+
+    // Функция для получения данных освещенности
+    function fetchLightData() {
+      fetch('/light')
+        .then(response => response.json())
+        .then(data => {
+          // Обновляем уровень освещенности на странице
+          document.getElementById('ambient-light').innerText = data.ambient_light;
+        })
+        .catch(error => {
+          console.log('Error fetching light data:', error);
+        });
+    }
+    
+    // Обновляем данные освещенности каждую секунду
+    setInterval(fetchLightData, 500);
+  </script>
+</body>
+</html>
