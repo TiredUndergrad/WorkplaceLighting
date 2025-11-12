@@ -1,4 +1,5 @@
 #include "MyRequestHandler.hpp"
+#include <ESPmDNS.h>
 
 extern uint16_t ambient_light;
 
@@ -20,6 +21,8 @@ void MyRequestHandler::begin() {
     _server.on("/savewifi", HTTP_POST, [this]() { this->handleSaveWiFi(); });
     _server.on("/scanwifi", HTTP_GET, [this]() { this->handleScanWiFi(); });
     _server.on("/light", HTTP_GET, [this]() { this->handleLightData(); });
+    _server.on("/wifistatus", HTTP_GET, [this]() { this->handleWiFiStatus(); });
+    _server.on("/disconnectwifi", HTTP_POST, [this]() { this->handleDisconnectWiFi(); });
     
     // Универсальный обработчик для ВСЕХ статических файлов
     _server.onNotFound([this]() {
@@ -67,23 +70,64 @@ void MyRequestHandler::loadWiFiSettings() {
   EEPROM.get(0, settings);
   EEPROM.end();
 
+  // Изначально считаем, что не настроено
+  _isConfigured = false;
+
   if (settings.ssid[0] != '\0') {
+    Serial.print("Attempting to connect to WiFi: ");
+    Serial.println(settings.ssid);
+    
+    WiFi.mode(WIFI_STA);
     WiFi.begin(settings.ssid, settings.password);
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 10) {
       delay(500);
       attempts++;
+      Serial.print(".");
     }
+    Serial.println();
     
     if (WiFi.status() == WL_CONNECTED) {
       _isConfigured = true;
+      Serial.print("WiFi connected! IP address: ");
+      Serial.println(WiFi.localIP());
+      
+      // Инициализация mDNS
+      if (MDNS.begin("workplacelighting")) {
+        Serial.println("mDNS responder started");
+        Serial.println("You can now access the device at: http://workplacelighting.local");
+        // Добавляем сервисы
+        MDNS.addService("http", "tcp", 80);
+        MDNS.addService("ftp", "tcp", 21);
+      } else {
+        Serial.println("Error setting up MDNS responder!");
+      }
+    } else {
+      Serial.println("Failed to connect to WiFi network!");
+      WiFi.disconnect(true);
+      delay(100);
     }
   }
 
   if (!_isConfigured) {
+    Serial.println("Starting Access Point mode...");
+    WiFi.mode(WIFI_AP);
     WiFi.softAP("ESP32-Config");
+    delay(100); // Даем время для инициализации AP
     Serial.println("Access Point started");
+    Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
+    
+    // Инициализация mDNS для режима Access Point
+    if (MDNS.begin("workplacelighting")) {
+      Serial.println("mDNS responder started");
+      Serial.println("You can now access the device at: http://workplacelighting.local");
+      // Добавляем сервисы
+      MDNS.addService("http", "tcp", 80);
+      MDNS.addService("ftp", "tcp", 21);
+    } else {
+      Serial.println("Error setting up MDNS responder!");
+    }
   }
 }
 
@@ -216,6 +260,53 @@ void MyRequestHandler::handleLightData() {
   // Отправляем текущие данные об освещенности в формате JSON
   String response = "{\"ambient_light\": " + String(ambient_light) + "}";
   _server.send(200, "application/json", response);
+}
+
+// Функция для получения статуса WiFi подключения
+void MyRequestHandler::handleWiFiStatus() {
+  String json = "{";
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    json += "\"connected\":true,";
+    json += "\"ssid\":\"" + WiFi.SSID() + "\",";
+    json += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
+    json += "\"rssi\":" + String(WiFi.RSSI()) + ",";
+    json += "\"mode\":\"station\"";
+  } else if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA) {
+    json += "\"connected\":false,";
+    json += "\"ssid\":\"ESP32-Config\",";
+    json += "\"ip\":\"" + WiFi.softAPIP().toString() + "\",";
+    json += "\"rssi\":0,";
+    json += "\"mode\":\"access_point\"";
+  } else {
+    json += "\"connected\":false,";
+    json += "\"ssid\":\"\",";
+    json += "\"ip\":\"\",";
+    json += "\"rssi\":0,";
+    json += "\"mode\":\"disconnected\"";
+  }
+  
+  json += "}";
+  _server.send(200, "application/json", json);
+}
+
+// Функция для разрыва WiFi соединения и перехода в режим Access Point
+void MyRequestHandler::handleDisconnectWiFi() {
+  // Отключаемся от WiFi сети
+  WiFi.disconnect(true);
+  delay(100);
+  
+  // Очищаем настройки из EEPROM
+  WiFiSettings emptySettings = {0};
+  EEPROM.begin(sizeof(WiFiSettings));
+  EEPROM.put(0, emptySettings);
+  EEPROM.commit();
+  EEPROM.end();
+  
+  // Перезагружаемся для перехода в AP режим
+  _server.send(200, "application/json", "{\"status\":\"disconnected\",\"message\":\"Device will restart in AP mode\"}");
+  delay(500);
+  ESP.restart();
 }
 
 

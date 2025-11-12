@@ -9,6 +9,20 @@
 <body>
   <div class="container">
     <h2>Wi-Fi Configuration</h2>
+    
+    <!-- Блок статуса подключения -->
+    <div class="status-container" id="statusContainer">
+      <h3>Current Connection Status</h3>
+      <div id="connectionStatus" class="status-info">
+        <p>Loading...</p>
+      </div>
+      <button class="disconnect-btn" id="disconnectBtn" onclick="disconnectWiFi()" style="display:none;">
+        Disconnect & Switch to Access Point
+      </button>
+    </div>
+    
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    
     <button class="scan-btn" onclick="scanNetworks()">Scan Networks</button>
     <div class="network-list" id="networkList"></div>
     <form action="/savewifi" method="post">
@@ -44,8 +58,66 @@
           });
         });
     }
-    // Автоматически сканировать сети при загрузке страницы
-    // window.onload = scanNetworks;
+    
+    function updateWiFiStatus() {
+      fetch('/wifistatus')
+        .then(response => response.json())
+        .then(data => {
+          const statusDiv = document.getElementById('connectionStatus');
+          const disconnectBtn = document.getElementById('disconnectBtn');
+          
+          if (data.connected) {
+            statusDiv.innerHTML = `
+              <p><strong>Status:</strong> <span style="color: #4CAF50;">Connected</span></p>
+              <p><strong>Network:</strong> ${data.ssid}</p>
+              <p><strong>IP Address:</strong> ${data.ip}</p>
+              <p><strong>Signal Strength:</strong> ${data.rssi} dBm</p>
+            `;
+            disconnectBtn.style.display = 'inline-block';
+          } else if (data.mode === 'access_point') {
+            statusDiv.innerHTML = `
+              <p><strong>Status:</strong> <span style="color: #ff9800;">Access Point Mode</span></p>
+              <p><strong>AP Name:</strong> ${data.ssid}</p>
+              <p><strong>IP Address:</strong> ${data.ip}</p>
+            `;
+            disconnectBtn.style.display = 'none';
+          } else {
+            statusDiv.innerHTML = `
+              <p><strong>Status:</strong> <span style="color: #f44336;">Not Connected</span></p>
+            `;
+            disconnectBtn.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching WiFi status:', error);
+          document.getElementById('connectionStatus').innerHTML = 
+            '<p style="color: #f44336;">Error loading status</p>';
+        });
+    }
+    
+    function disconnectWiFi() {
+      if (confirm('Are you sure you want to disconnect and switch to Access Point mode? The device will restart.')) {
+        fetch('/disconnectwifi', { method: 'POST' })
+          .then(response => response.json())
+          .then(data => {
+            alert(data.message || 'Disconnecting... Device will restart.');
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          })
+          .catch(error => {
+            console.error('Error disconnecting:', error);
+            alert('Error disconnecting. Please try again.');
+          });
+      }
+    }
+    
+    // Автоматически обновлять статус при загрузке страницы
+    window.onload = function() {
+      updateWiFiStatus();
+      // Обновлять статус каждые 5 секунд
+      setInterval(updateWiFiStatus, 5000);
+    };
   </script>
 </body>
 </html>

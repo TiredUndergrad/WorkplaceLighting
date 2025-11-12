@@ -27,6 +27,8 @@ public:
     void handleScanWiFi();
     void handleLightData();
     void handleCSS();
+    void handleWiFiStatus();
+    void handleDisconnectWiFi();
     
 private:
     WebServer& _server;

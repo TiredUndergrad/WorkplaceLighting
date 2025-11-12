@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 #include <EEPROM.h>
+#include <ESPmDNS.h>   // Библиотека для mDNS
 #include "MyRequestHandler.hpp"
 
 SparkFun_APDS9960 apds; // Создание объекта датчика освещения
@@ -34,6 +35,7 @@ void setup() {
   digitalWrite(ledPin, LOW);
 
   Serial.begin(115200);
+  Wire.begin();
 
   // Инициализация SPIFFS
   if (SPIFFS.begin(true)) {
@@ -53,10 +55,19 @@ void setup() {
     Serial.println(F("Something went wrong during APDS-9960 init!"));
   }
 
-  if (apds.enableLightSensor(false)) {
-    Serial.println(F("Light sensor is now running"));
+  if (apds.setAmbientLightGain(AGAIN_16X)) {
+    Serial.println(F("Ambient light gain set to 64x (maximum sensitivity)"));
   } else {
-    Serial.println(F("Something went wrong during light sensor init!"));
+    Serial.println(F("Failed to set ambient light gain"));
+  }
+
+  Wire.beginTransmission(APDS9960_I2C_ADDR); // I2C адрес APDS-9960
+  Wire.write(APDS9960_ATIME); // Регистр ATIME
+  Wire.write(0xC0); // Максимальное значение (255) = максимальное время интегрирования
+  if (Wire.endTransmission() == 0) {
+    Serial.println(F("ATIME set to maximum (0xFF) for full 16-bit range"));
+  } else {
+    Serial.println(F("Failed to set ATIME register"));
   }
 }
 
@@ -64,7 +75,13 @@ void loop() {
   server.handleClient(); // Обработка HTTP-запросов
   ftpSrv.handleFTP();    // Обработка FTP-запросов
   apds.readAmbientLight(ambient_light);
-  // Serial.println(ambient_light);
+  
+  static unsigned long lastprint = 0;
+  if (millis() - lastprint > 1000)
+  {
+    Serial.println(ambient_light);
+    lastprint = millis();
+  }
 }
 
   // // Проверяем наличие файлов
