@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <EEPROM.h>
 #include <ESPmDNS.h>   // Библиотека для mDNS
+// #include "soc/rtc_cntl_reg.h" // Для работы с brownout detector
 #include "MyRequestHandler.hpp"
 
 SparkFun_APDS9960 apds; // Создание объекта датчика освещения
@@ -23,6 +24,9 @@ FTPServer ftpSrv(SPIFFS);
 
 
 void setup() {
+  // // Отключение brownout detector для предотвращения перезагрузок при просадке напряжения
+  // // ВНИМАНИЕ: Это временное решение! Лучше использовать качественный блок питания
+  // WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Отключаем brownout detector
 
   // EEPROM.begin(sizeof(WiFiSettings));
   // WiFiSettings emptySettings = {0}; // Заполняем структуру пустыми значениями
@@ -55,6 +59,12 @@ void setup() {
     Serial.println(F("Something went wrong during APDS-9960 init!"));
   }
 
+  if (apds.enableLightSensor(false)) {
+    Serial.println("Sensor enabled!");
+  } else {
+    Serial.println("Error enabling sensor!");
+  }
+
   if (apds.setAmbientLightGain(AGAIN_16X)) {
     Serial.println(F("Ambient light gain set to 64x (maximum sensitivity)"));
   } else {
@@ -76,12 +86,12 @@ void loop() {
   ftpSrv.handleFTP();    // Обработка FTP-запросов
   apds.readAmbientLight(ambient_light);
   
-  static unsigned long lastprint = 0;
-  if (millis() - lastprint > 1000)
-  {
-    Serial.println(ambient_light);
-    lastprint = millis();
-  }
+  // static unsigned long lastprint = 0;
+  // if (millis() - lastprint > 1000)
+  // {
+  //   Serial.println(ambient_light);
+  //   lastprint = millis();
+  // }
 }
 
   // // Проверяем наличие файлов

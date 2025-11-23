@@ -19,6 +19,11 @@ void MyRequestHandler::begin() {
     _server.on("/led/on", HTTP_POST, [this]() { this->handleLedOn(); });
     _server.on("/led/off", HTTP_POST, [this]() { this->handleLedOff(); });
     _server.on("/savewifi", HTTP_POST, [this]() { this->handleSaveWiFi(); });
+    _server.on("/savewifi", HTTP_GET, [this]() { 
+      // Редирект на страницу конфигурации, если кто-то попытается открыть /savewifi напрямую
+      _server.sendHeader("Location", "/wifi-config", true);
+      _server.send(302, "text/plain", ""); 
+    });
     _server.on("/scanwifi", HTTP_GET, [this]() { this->handleScanWiFi(); });
     _server.on("/light", HTTP_GET, [this]() { this->handleLightData(); });
     _server.on("/wifistatus", HTTP_GET, [this]() { this->handleWiFiStatus(); });
@@ -211,35 +216,179 @@ void MyRequestHandler::handleLedOff() {
 }
 
 void MyRequestHandler::handleSaveWiFi() {
+  Serial.println("\n=== handleSaveWiFi START ===");
+  Serial.print("Current WiFi mode: ");
+  Serial.println(WiFi.getMode());
+  Serial.print("Current WiFi status: ");
+  Serial.println(WiFi.status());
+  
   String newSSID = _server.arg("ssid");
   String newPass = _server.arg("password");
-
-  // Сохраняем в EEPROM
-  WiFiSettings settings;
-  strncpy(settings.ssid, newSSID.c_str(), sizeof(settings.ssid));
-  strncpy(settings.password, newPass.c_str(), sizeof(settings.password));
   
+  Serial.print("Attempting to connect to SSID: ");
+  Serial.println(newSSID);
+  Serial.print("Password length: ");
+  Serial.println(newPass.length());
+
+  // Сохраняем текущий режим WiFi
+  bool wasInAPMode = (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA);
+  Serial.print("Was in AP mode: ");
+  Serial.println(wasInAPMode ? "YES" : "NO");
+
+  // Сохраняем старые настройки WiFi из EEPROM для возможного восстановления
+  WiFiSettings oldSettings;
   EEPROM.begin(sizeof(WiFiSettings));
-  EEPROM.put(0, settings);
-  EEPROM.commit();
+  EEPROM.get(0, oldSettings);
   EEPROM.end();
+  
+  bool hadPreviousConnection = (oldSettings.ssid[0] != '\0' && WiFi.status() == WL_CONNECTED);
+  Serial.print("Had previous WiFi connection: ");
+  Serial.println(hadPreviousConnection ? "YES" : "NO");
+  if (hadPreviousConnection) {
+    Serial.print("Previous SSID: ");
+    Serial.println(oldSettings.ssid);
+  }
+
+  // Пока НЕ сохраняем новые настройки в EEPROM - только при успешном подключении
+  // Сначала пробуем подключиться
 
   // Пытаемся подключиться
+  // Используем AP+STA режим, чтобы сохранить AP соединение во время попытки подключения
+  Serial.println("Switching to AP+STA mode to maintain connection...");
+  WiFi.mode(WIFI_AP_STA);
+  Serial.print("WiFi mode after switch: ");
+  Serial.println(WiFi.getMode());
+  
+  Serial.println("Calling WiFi.begin()...");
   WiFi.begin(newSSID.c_str(), newPass.c_str());
+  
+  Serial.println("Waiting for connection...");
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 10) {
     delay(500);
     attempts++;
+    Serial.print("Attempt ");
+    Serial.print(attempts);
+    Serial.print("/10, WiFi status: ");
+    Serial.println(WiFi.status());
+    
+    // Обрабатываем клиентов во время ожидания
+    _server.handleClient();
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
+  Serial.print("Final WiFi status: ");
+  Serial.println(WiFi.status());
+  Serial.print("WiFi status == WL_CONNECTED: ");
+  Serial.println(WiFi.status() == WL_CONNECTED ? "YES" : "NO");
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("Connection successful!");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    
+    // Только при успешном подключении сохраняем новые настройки в EEPROM
+    Serial.println("Saving new settings to EEPROM...");
+    WiFiSettings settings;
+    strncpy(settings.ssid, newSSID.c_str(), sizeof(settings.ssid));
+    strncpy(settings.password, newPass.c_str(), sizeof(settings.password));
+    
+    EEPROM.begin(sizeof(WiFiSettings));
+    EEPROM.put(0, settings);
+    EEPROM.commit();
+    EEPROM.end();
+    Serial.println("New settings saved to EEPROM");
+    
     _isConfigured = true;
-    _server.send(200, "text/plain", "WiFi configured successfully! Device will reboot.");
-    delay(1000);
+    // Отправляем JSON ответ (форма отправляется через fetch, URL не меняется)
+    Serial.println("Sending success response...");
+    _server.send(200, "application/json", "{\"status\":\"success\",\"message\":\"WiFi configured successfully! Device will reboot.\"}");
+    Serial.println("Response sent, waiting 2 seconds before restart...");
+    delay(2000); // Даем время на получение ответа
+    Serial.println("Restarting ESP32...");
     ESP.restart();
-  } else {
-    _server.send(500, "text/plain", "Failed to connect to WiFi");
   }
+  else
+  {
+    Serial.println("Connection failed!");
+    Serial.print("WiFi status code: ");
+    Serial.println(WiFi.status());
+    
+    // ВАЖНО: Отправляем ответ ПЕРЕД любыми операциями с WiFi режимом!
+    // Отправляем JSON ответ (форма отправляется через fetch, URL не меняется)
+    Serial.println("Sending error response...");
+    _server.send(500, "application/json", "{\"status\":\"error\",\"message\":\"Failed to connect to WiFi. Please check your credentials.\"}");
+    Serial.println("Error response sent");
+    
+    // Даем время на отправку ответа перед изменением режима WiFi
+    delay(500);
+    
+    // Теперь безопасно можем изменить режим WiFi
+    Serial.println("Disconnecting from failed WiFi connection...");
+    WiFi.disconnect(true);
+    delay(100);
+    Serial.print("WiFi status after disconnect: ");
+    Serial.println(WiFi.status());
+    
+    // Пытаемся восстановить предыдущее подключение, если оно было
+    if (hadPreviousConnection && oldSettings.ssid[0] != '\0') {
+      Serial.println("Attempting to restore previous WiFi connection...");
+      Serial.print("Previous SSID: ");
+      Serial.println(oldSettings.ssid);
+      
+      WiFi.mode(WIFI_AP_STA); // Используем AP+STA для сохранения AP соединения
+      WiFi.softAP("ESP32-Config"); // Восстанавливаем AP
+      delay(100);
+      
+      // Пытаемся подключиться к старой сети
+      WiFi.begin(oldSettings.ssid, oldSettings.password);
+      int restoreAttempts = 0;
+      while (WiFi.status() != WL_CONNECTED && restoreAttempts < 10) {
+        delay(500);
+        restoreAttempts++;
+        Serial.print("Restore attempt ");
+        Serial.print(restoreAttempts);
+        Serial.print("/10, WiFi status: ");
+        Serial.println(WiFi.status());
+        _server.handleClient(); // Обрабатываем клиентов
+      }
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("Previous WiFi connection restored!");
+        Serial.print("IP address: ");
+        Serial.println(WiFi.localIP());
+        _isConfigured = true;
+      } else {
+        Serial.println("Failed to restore previous connection, switching to AP mode only");
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP("ESP32-Config");
+        delay(100);
+        Serial.print("AP IP: ");
+        Serial.println(WiFi.softAPIP());
+        _isConfigured = false;
+      }
+    } else {
+      // Если не было предыдущего подключения, просто возвращаемся в AP режим
+      if (wasInAPMode) {
+        Serial.println("Restoring AP mode...");
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP("ESP32-Config");
+        delay(100);
+        Serial.print("AP IP: ");
+        Serial.println(WiFi.softAPIP());
+      } else {
+        Serial.println("Switching to AP+STA mode to maintain connection...");
+        WiFi.mode(WIFI_AP_STA);
+        WiFi.softAP("ESP32-Config");
+        delay(100);
+        Serial.print("AP IP: ");
+        Serial.println(WiFi.softAPIP());
+      }
+      _isConfigured = false;
+    }
+  }
+  
+  Serial.println("=== handleSaveWiFi END ===\n");
 }
 
 void MyRequestHandler::handleScanWiFi() {
