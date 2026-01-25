@@ -3,8 +3,8 @@
 
 extern uint16_t ambient_light;
 
-MyRequestHandler::MyRequestHandler(WebServer& server, int ledPin) 
-    : _server(server), _ledPin(ledPin), _ledState(false), _isConfigured(false) {
+MyRequestHandler::MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController) 
+    : _server(server), _ledPin(ledPin), _ledState(false), _isConfigured(false), _ledController(ledController) {
     pinMode(_ledPin, OUTPUT);
     digitalWrite(_ledPin, LOW);
 }
@@ -28,6 +28,13 @@ void MyRequestHandler::begin() {
     _server.on("/light", HTTP_GET, [this]() { this->handleLightData(); });
     _server.on("/wifistatus", HTTP_GET, [this]() { this->handleWiFiStatus(); });
     _server.on("/disconnectwifi", HTTP_POST, [this]() { this->handleDisconnectWiFi(); });
+    
+    // Обработчики для LED контроллера
+    _server.on("/seteffect", HTTP_POST, [this]() { this->handleSetEffect(); });
+    _server.on("/setsplitting", HTTP_POST, [this]() { this->handleSetSplitting(); });
+    _server.on("/setmotion", HTTP_POST, [this]() { this->handleSetMotion(); });
+    _server.on("/settimer", HTTP_POST, [this]() { this->handleSetTimer(); });
+    _server.on("/getsettings", HTTP_GET, [this]() { this->handleGetSettings(); });
     
     // Универсальный обработчик для ВСЕХ статических файлов
     _server.onNotFound([this]() {
@@ -206,12 +213,18 @@ String MyRequestHandler::getContentType(String filename) {
 void MyRequestHandler::handleLedOn() {
     _ledState = true;
     digitalWrite(_ledPin, HIGH);
+    if (_ledController) {
+        _ledController->turnOn();
+    }
     _server.send(200, "text/plain", "LED is ON");
 }
 
 void MyRequestHandler::handleLedOff() {
     _ledState = false;
     digitalWrite(_ledPin, LOW);
+    if (_ledController) {
+        _ledController->turnOff();
+    }
     _server.send(200, "text/plain", "LED is OFF");
 }
 
@@ -456,6 +469,142 @@ void MyRequestHandler::handleDisconnectWiFi() {
   _server.send(200, "application/json", "{\"status\":\"disconnected\",\"message\":\"Device will restart in AP mode\"}");
   delay(500);
   ESP.restart();
+}
+
+// Обработчик установки эффекта для одной зоны
+void MyRequestHandler::handleSetEffect() {
+  if (!_ledController) {
+    _server.send(500, "application/json", "{\"error\":\"LED controller not initialized\"}");
+    return;
+  }
+  
+  uint8_t effect = _server.arg("effect").toInt();
+  uint8_t val = _server.arg("val").toInt();
+  uint8_t speed = _server.arg("speed").toInt();
+  uint8_t color = _server.arg("color").toInt();
+  uint8_t temp = _server.arg("temp").toInt();
+  
+  _ledController->setEffect(effect, val, speed, color, temp);
+  
+  _server.send(200, "application/json", "{\"status\":\"ok\"}");
+}
+
+// Обработчик установки режима разделения на зоны
+void MyRequestHandler::handleSetSplitting() {
+  if (!_ledController) {
+    _server.send(500, "application/json", "{\"error\":\"LED controller not initialized\"}");
+    return;
+  }
+  
+  SplittingParams params;
+  params.numSplit = _server.arg("numSplit").toInt();
+  
+  params.effect1 = _server.arg("effect1").toInt();
+  params.val1 = _server.arg("val1").toInt();
+  params.speed1 = _server.arg("speed1").toInt();
+  params.color1 = _server.arg("color1").toInt();
+  params.temp1 = _server.arg("temp1").toInt();
+  
+  params.effect2 = _server.arg("effect2").toInt();
+  params.val2 = _server.arg("val2").toInt();
+  params.speed2 = _server.arg("speed2").toInt();
+  params.color2 = _server.arg("color2").toInt();
+  params.temp2 = _server.arg("temp2").toInt();
+  
+  if (params.numSplit == 3) {
+    params.effect3 = _server.arg("effect3").toInt();
+    params.val3 = _server.arg("val3").toInt();
+    params.speed3 = _server.arg("speed3").toInt();
+    params.color3 = _server.arg("color3").toInt();
+    params.temp3 = _server.arg("temp3").toInt();
+  } else {
+    params.effect3 = 0;
+    params.val3 = 0;
+    params.speed3 = 1;
+    params.color3 = 0;
+    params.temp3 = 128;
+  }
+  
+  _ledController->setSplitting(params);
+  
+  _server.send(200, "application/json", "{\"status\":\"ok\"}");
+}
+
+// Обработчик настроек датчика движения
+void MyRequestHandler::handleSetMotion() {
+  // TODO: Реализовать обработку настроек датчика движения
+  // Пока просто отправляем успешный ответ
+  bool enabled = _server.arg("enabled").toInt() == 1;
+  uint16_t timeout = _server.arg("timeout").toInt();
+  
+  // Здесь можно сохранить настройки в EEPROM или глобальные переменные
+  // и использовать их для управления LED лентой
+  
+  _server.send(200, "application/json", "{\"status\":\"ok\"}");
+}
+
+// Обработчик настроек таймера
+void MyRequestHandler::handleSetTimer() {
+  // TODO: Реализовать обработку настроек таймера
+  // Пока просто отправляем успешный ответ
+  bool enabled = _server.arg("enabled").toInt() == 1;
+  uint16_t interval = _server.arg("interval").toInt();
+  
+  // Здесь можно сохранить настройки в EEPROM или глобальные переменные
+  // и использовать их для напоминаний
+  
+  _server.send(200, "application/json", "{\"status\":\"ok\"}");
+}
+
+// Обработчик получения текущих настроек
+void MyRequestHandler::handleGetSettings() {
+  if (!_ledController) {
+    _server.send(500, "application/json", "{\"error\":\"LED controller not initialized\"}");
+    return;
+  }
+  
+  String json = "{";
+  
+  if (_ledController->isSplittingMode()) {
+    SplittingParams params = _ledController->getSplittingParams();
+    json += "\"mode\":\"split" + String(params.numSplit) + "\",";
+    json += "\"numSplit\":" + String(params.numSplit) + ",";
+    json += "\"zone1\":{";
+    json += "\"effect\":" + String(params.effect1) + ",";
+    json += "\"brightness\":" + String(params.val1) + ",";
+    json += "\"speed\":" + String(params.speed1) + ",";
+    json += "\"color\":" + String(params.color1) + ",";
+    json += "\"temp\":" + String((params.temp1 * 6000 / 255) + 2000);
+    json += "},";
+    json += "\"zone2\":{";
+    json += "\"effect\":" + String(params.effect2) + ",";
+    json += "\"brightness\":" + String(params.val2) + ",";
+    json += "\"speed\":" + String(params.speed2) + ",";
+    json += "\"color\":" + String(params.color2) + ",";
+    json += "\"temp\":" + String((params.temp2 * 6000 / 255) + 2000);
+    json += "}";
+    if (params.numSplit == 3) {
+      json += ",\"zone3\":{";
+      json += "\"effect\":" + String(params.effect3) + ",";
+      json += "\"brightness\":" + String(params.val3) + ",";
+      json += "\"speed\":" + String(params.speed3) + ",";
+      json += "\"color\":" + String(params.color3) + ",";
+      json += "\"temp\":" + String((params.temp3 * 6000 / 255) + 2000);
+      json += "}";
+    }
+  } else {
+    EffectParams params = _ledController->getCurrentEffect();
+    json += "\"mode\":\"single\",";
+    json += "\"effect\":" + String(params.effect) + ",";
+    json += "\"brightness\":" + String(params.val) + ",";
+    json += "\"speed\":" + String(params.speed) + ",";
+    json += "\"color\":" + String(params.color) + ",";
+    json += "\"temp\":" + String((params.temp * 6000 / 255) + 2000);
+  }
+  
+  json += "}";
+  
+  _server.send(200, "application/json", json);
 }
 
 

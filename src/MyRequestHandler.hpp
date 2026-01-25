@@ -5,6 +5,7 @@
 #include <SPIFFS.h>
 #include <EEPROM.h>
 #include <WiFi.h>
+#include "LedStripController.hpp"
 
 struct WiFiSettings {
   char ssid[32];
@@ -13,7 +14,7 @@ struct WiFiSettings {
 
 class MyRequestHandler {
 public:
-    MyRequestHandler(WebServer& server, int ledPin);
+    MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController = nullptr);
     
     void begin();
     void handleClient();
@@ -30,12 +31,20 @@ public:
     void handleWiFiStatus();
     void handleDisconnectWiFi();
     
+    // Новые обработчики для LED контроллера
+    void handleSetEffect();
+    void handleSetSplitting();
+    void handleSetMotion();
+    void handleSetTimer();
+    void handleGetSettings();
+    
 private:
     WebServer& _server;
     int _ledPin;
     bool _ledState;
     bool _isConfigured;
     bool _indexExists;  // Кэш для проверки существования index.html
+    LedStripController* _ledController;  // Указатель на контроллер LED ленты
     
     void loadWiFiSettings();
     void checkIndexFile();  // Метод для проверки файла
