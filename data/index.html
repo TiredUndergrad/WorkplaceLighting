@@ -54,17 +54,11 @@
         </select>
       </div>
 
-      <!-- Яркость -->
+      <!-- Яркость (ручная) -->
       <div class="control-group">
-        <label>
-          <input type="checkbox" id="auto-brightness" onchange="toggleAutoBrightness()">
-          Автоматическая регулировка яркости
-        </label>
-        <div id="manual-brightness-group">
-          <label for="brightness-slider">Яркость: <span id="brightness-value">128</span></label>
-          <input type="range" id="brightness-slider" min="0" max="255" value="128" 
-                 oninput="updateBrightness(this.value)">
-        </div>
+        <label for="brightness-slider">Яркость: <span id="brightness-value">128</span></label>
+        <input type="range" id="brightness-slider" min="0" max="255" value="128" 
+               oninput="updateBrightness(this.value)">
       </div>
 
       <!-- Выбор цвета (HSV) -->
@@ -122,6 +116,20 @@
     <div class="section">
       <h2>Дополнительные функции</h2>
       
+      <!-- Автояркость по датчику освещённости и целевая освещённость -->
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="auto-brightness" onchange="toggleAutoBrightness()">
+          Автоматическая регулировка яркости по датчику освещённости
+        </label>
+        <div id="aim-light-group" style="margin-top: 10px;">
+          <label for="aim-light-slider">Целевая освещённость: <span id="aim-light-value">700</span></label>
+          <input type="range" id="aim-light-slider" min="0" max="2000" value="700" step="50"
+                 oninput="updateAimLight(this.value)">
+          <p class="hint">Яркость ленты подстраивается под эту освещённость (0–2000).</p>
+        </div>
+      </div>
+
       <!-- Автоматическое включение при движении -->
       <div class="control-group">
         <label>
@@ -143,7 +151,7 @@
         </label>
         <div id="timer-settings" style="display: none; margin-top: 10px;">
           <label for="timer-interval">Интервал напоминаний (мин): <span id="timer-interval-value">60</span></label>
-          <input type="range" id="timer-interval" min="5" max="180" value="60" step="5"
+          <input type="range" id="timer-interval" min="1" max="180" value="60" step="1"
                  oninput="updateTimerInterval(this.value)">
           <p class="timer-info">Следующее напоминание: <span id="timer-next">--:--</span></p>
         </div>
@@ -181,12 +189,7 @@
         .then(response => response.json())
         .then(data => {
           document.getElementById('ambient-light').textContent = data.ambient_light;
-          
-          // Автоматическая регулировка яркости
-          if (autoBrightness) {
-            const brightness = calculateAutoBrightness(data.ambient_light);
-            updateBrightness(brightness, true);
-          }
+          // Яркость при ALS регулируется на устройстве, не перезаписываем с клиента
         })
         .catch(error => {
           console.log('Error fetching light data:', error);
@@ -474,11 +477,15 @@
       sendZonesSettings();
     }
 
-    // Переключение автоматической яркости
+    // Переключение автоматической яркости (ALS)
     function toggleAutoBrightness() {
       autoBrightness = document.getElementById('auto-brightness').checked;
-      const manualGroup = document.getElementById('manual-brightness-group');
-      manualGroup.style.display = autoBrightness ? 'none' : 'block';
+      sendALSSettings();
+    }
+
+    function updateAimLight(value) {
+      document.getElementById('aim-light-value').textContent = value;
+      sendALSSettings();
     }
 
     // Переключение датчика движения
@@ -531,8 +538,10 @@
       const hue = currentHSV.h;
       const color = Math.round(hue * 255 / 360);
       const temp = parseInt(document.getElementById('temperature-slider').value);
+      // S и V в интерфейсе 0–100, на бэкенд отправляем 0–255
+      const sat = Math.round(currentHSV.s * 255 / 100);
+      const hsvval = Math.round(currentHSV.v * 255 / 100);
       
-      // Нормализация температуры для отправки (2000-8000K -> 0-255)
       const tempNormalized = Math.round(((temp - 2000) / 6000) * 255);
       
       const params = new URLSearchParams({
@@ -540,11 +549,17 @@
         val: brightness,
         speed: speed,
         color: color,
-        temp: tempNormalized
+        temp: tempNormalized,
+        sat: sat,
+        hsvval: hsvval
       });
       
-      fetch('/seteffect?' + params.toString(), { method: 'POST' })
-        .catch(error => console.error('Error sending effect settings:', error));
+      // Параметры в теле POST — иначе sat/hsvval могут не доходить до сервера
+      fetch('/seteffect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error sending effect settings:', error));
     }
 
     // Отправка настроек зон
@@ -575,9 +590,27 @@
         enabled: motionSensorEnabled ? '1' : '0',
         timeout: timeout
       });
-      
-      fetch('/setmotion?' + params.toString(), { method: 'POST' })
-        .catch(error => console.error('Error sending motion settings:', error));
+      fetch('/setmotion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error sending motion settings:', error));
+    }
+
+    // Отправка настроек автояркости (ALS)
+    function sendALSSettings() {
+      const aimLight = parseInt(document.getElementById('aim-light-slider').value);
+      const params = new URLSearchParams({
+        enabled: autoBrightness ? '1' : '0',
+        aim_light: aimLight,
+        k: '0.02',
+        delay_als: '3'
+      });
+      fetch('/setals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error sending ALS settings:', error));
     }
 
     // Отправка настроек таймера
@@ -597,10 +630,54 @@
       fetch('/getsettings')
         .then(response => response.json())
         .then(data => {
-          // Загружаем настройки если они есть
           if (data.mode) {
             document.getElementById('mode-select').value = data.mode;
             changeMode();
+          }
+          if (data.mode === 'single' && data.saturation !== undefined && data.hsvval !== undefined) {
+            const s = Math.round(data.saturation * 100 / 255);
+            const v = Math.round(data.hsvval * 100 / 255);
+            currentHSV.s = s;
+            currentHSV.v = v;
+            if (document.getElementById('saturation-slider')) {
+              document.getElementById('saturation-slider').value = s;
+              document.getElementById('saturation-value').textContent = s;
+            }
+            if (document.getElementById('value-slider')) {
+              document.getElementById('value-slider').value = v;
+              document.getElementById('value-value').textContent = v;
+            }
+          }
+          if (data.motion_enabled !== undefined) {
+            motionSensorEnabled = data.motion_enabled === 1;
+            const cb = document.getElementById('motion-sensor');
+            if (cb) cb.checked = motionSensorEnabled;
+            const st = document.getElementById('motion-settings');
+            if (st) st.style.display = motionSensorEnabled ? 'block' : 'none';
+          }
+          if (data.motion_timeout !== undefined) {
+            const el = document.getElementById('motion-timeout');
+            if (el) { el.value = data.motion_timeout; document.getElementById('motion-timeout-value').textContent = data.motion_timeout; }
+          }
+          if (data.auto_brightness !== undefined) {
+            autoBrightness = data.auto_brightness === 1;
+            const cb = document.getElementById('auto-brightness');
+            if (cb) cb.checked = autoBrightness;
+          }
+          if (data.aim_light !== undefined) {
+            const el = document.getElementById('aim-light-slider');
+            if (el) { el.value = data.aim_light; document.getElementById('aim-light-value').textContent = data.aim_light; }
+          }
+          if (data.timer_enabled !== undefined) {
+            timerEnabled = data.timer_enabled === 1;
+            const cb = document.getElementById('timer-enabled');
+            if (cb) cb.checked = timerEnabled;
+            const st = document.getElementById('timer-settings');
+            if (st) st.style.display = timerEnabled ? 'block' : 'none';
+          }
+          if (data.timer_interval !== undefined) {
+            const el = document.getElementById('timer-interval');
+            if (el) { el.value = data.timer_interval; document.getElementById('timer-interval-value').textContent = data.timer_interval; }
           }
         })
         .catch(error => {

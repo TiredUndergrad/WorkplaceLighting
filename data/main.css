@@ -534,6 +534,12 @@ input[type="checkbox"] {
     color: #1976d2;
 }
 
+.hint {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
 /* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
 @media (max-width: 768px) {
     .container {

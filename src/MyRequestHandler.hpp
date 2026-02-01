@@ -35,6 +35,7 @@ public:
     void handleSetEffect();
     void handleSetSplitting();
     void handleSetMotion();
+    void handleSetALS();
     void handleSetTimer();
     void handleGetSettings();
     

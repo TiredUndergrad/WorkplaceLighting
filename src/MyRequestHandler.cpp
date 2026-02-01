@@ -1,4 +1,5 @@
 #include "MyRequestHandler.hpp"
+#include "AdvParams.h"
 #include <ESPmDNS.h>
 
 extern uint16_t ambient_light;
@@ -33,6 +34,7 @@ void MyRequestHandler::begin() {
     _server.on("/seteffect", HTTP_POST, [this]() { this->handleSetEffect(); });
     _server.on("/setsplitting", HTTP_POST, [this]() { this->handleSetSplitting(); });
     _server.on("/setmotion", HTTP_POST, [this]() { this->handleSetMotion(); });
+    _server.on("/setals", HTTP_POST, [this]() { this->handleSetALS(); });
     _server.on("/settimer", HTTP_POST, [this]() { this->handleSetTimer(); });
     _server.on("/getsettings", HTTP_GET, [this]() { this->handleGetSettings(); });
     
@@ -478,13 +480,21 @@ void MyRequestHandler::handleSetEffect() {
     return;
   }
   
-  uint8_t effect = _server.arg("effect").toInt();
-  uint8_t val = _server.arg("val").toInt();
-  uint8_t speed = _server.arg("speed").toInt();
-  uint8_t color = _server.arg("color").toInt();
-  uint8_t temp = _server.arg("temp").toInt();
+  uint8_t effect = 0, val = 128, speed = 1, color = 0, temp = 0, sat = 255, hsvVal = 255;
+  // Читаем все аргументы по индексу — arg("sat")/arg("hsvval") иногда не находит POST-параметры
+  for (size_t i = 0; i < _server.args(); i++) {
+    String name = _server.argName(i);
+    String value = _server.arg(i);
+    if (name == "effect") effect = (uint8_t)value.toInt();
+    else if (name == "val") val = (uint8_t)value.toInt();
+    else if (name == "speed") speed = (uint8_t)value.toInt();
+    else if (name == "color") color = (uint8_t)value.toInt();
+    else if (name == "temp") temp = (uint8_t)value.toInt();
+    else if (name == "sat") sat = (uint8_t)value.toInt();
+    else if (name == "hsvval") hsvVal = (uint8_t)value.toInt();
+  }
   
-  _ledController->setEffect(effect, val, speed, color, temp);
+  _ledController->setEffect(effect, val, speed, color, temp, sat, hsvVal);
   
   _server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
@@ -499,17 +509,26 @@ void MyRequestHandler::handleSetSplitting() {
   SplittingParams params;
   params.numSplit = _server.arg("numSplit").toInt();
   
+  auto readOpt = [this](const char* name, uint8_t def) -> uint8_t {
+    String a = _server.arg(name);
+    return a.length() ? (uint8_t)a.toInt() : def;
+  };
+  
   params.effect1 = _server.arg("effect1").toInt();
   params.val1 = _server.arg("val1").toInt();
   params.speed1 = _server.arg("speed1").toInt();
   params.color1 = _server.arg("color1").toInt();
   params.temp1 = _server.arg("temp1").toInt();
+  params.sat1 = readOpt("sat1", 255);
+  params.hsvVal1 = readOpt("hsvval1", 255);
   
   params.effect2 = _server.arg("effect2").toInt();
   params.val2 = _server.arg("val2").toInt();
   params.speed2 = _server.arg("speed2").toInt();
   params.color2 = _server.arg("color2").toInt();
   params.temp2 = _server.arg("temp2").toInt();
+  params.sat2 = readOpt("sat2", 255);
+  params.hsvVal2 = readOpt("hsvval2", 255);
   
   if (params.numSplit == 3) {
     params.effect3 = _server.arg("effect3").toInt();
@@ -517,12 +536,16 @@ void MyRequestHandler::handleSetSplitting() {
     params.speed3 = _server.arg("speed3").toInt();
     params.color3 = _server.arg("color3").toInt();
     params.temp3 = _server.arg("temp3").toInt();
+    params.sat3 = readOpt("sat3", 255);
+    params.hsvVal3 = readOpt("hsvval3", 255);
   } else {
     params.effect3 = 0;
     params.val3 = 0;
     params.speed3 = 1;
     params.color3 = 0;
     params.temp3 = 128;
+    params.sat3 = 255;
+    params.hsvVal3 = 255;
   }
   
   _ledController->setSplitting(params);
@@ -532,27 +555,40 @@ void MyRequestHandler::handleSetSplitting() {
 
 // Обработчик настроек датчика движения
 void MyRequestHandler::handleSetMotion() {
-  // TODO: Реализовать обработку настроек датчика движения
-  // Пока просто отправляем успешный ответ
-  bool enabled = _server.arg("enabled").toInt() == 1;
-  uint16_t timeout = _server.arg("timeout").toInt();
-  
-  // Здесь можно сохранить настройки в EEPROM или глобальные переменные
-  // и использовать их для управления LED лентой
-  
+  for (size_t i = 0; i < _server.args(); i++) {
+    String name = _server.argName(i);
+    String value = _server.arg(i);
+    if (name == "enabled") advParams.moveMode = (value.toInt() == 1);
+    else if (name == "timeout") advParams.timeOut = (int)value.toInt();
+  }
+  if (advParams.moveMode && _ledController) {
+    uint8_t cur = _ledController->getCurrentEffect().val;
+    motionMaxBrightness = (cur >= 10) ? cur : 200;
+  }
+  _server.send(200, "application/json", "{\"status\":\"ok\"}");
+}
+
+// Обработчик настроек автояркости (ALS)
+void MyRequestHandler::handleSetALS() {
+  for (size_t i = 0; i < _server.args(); i++) {
+    String name = _server.argName(i);
+    String value = _server.arg(i);
+    if (name == "enabled") advParams.brightMode = (value.toInt() == 1);
+    else if (name == "aim_light") advParams.aimLight = (int)value.toInt();
+    else if (name == "k") advParams.k = value.toFloat();
+    else if (name == "delay_als") advParams.delayALS = (uint8_t)value.toInt();
+  }
   _server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
 
 // Обработчик настроек таймера
 void MyRequestHandler::handleSetTimer() {
-  // TODO: Реализовать обработку настроек таймера
-  // Пока просто отправляем успешный ответ
-  bool enabled = _server.arg("enabled").toInt() == 1;
-  uint16_t interval = _server.arg("interval").toInt();
-  
-  // Здесь можно сохранить настройки в EEPROM или глобальные переменные
-  // и использовать их для напоминаний
-  
+  for (size_t i = 0; i < _server.args(); i++) {
+    String name = _server.argName(i);
+    String value = _server.arg(i);
+    if (name == "enabled") advParams.timEnable = (value.toInt() == 1);
+    else if (name == "interval") advParams.interval = (int)value.toInt();
+  }
   _server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
 
@@ -570,26 +606,19 @@ void MyRequestHandler::handleGetSettings() {
     json += "\"mode\":\"split" + String(params.numSplit) + "\",";
     json += "\"numSplit\":" + String(params.numSplit) + ",";
     json += "\"zone1\":{";
-    json += "\"effect\":" + String(params.effect1) + ",";
-    json += "\"brightness\":" + String(params.val1) + ",";
-    json += "\"speed\":" + String(params.speed1) + ",";
-    json += "\"color\":" + String(params.color1) + ",";
-    json += "\"temp\":" + String((params.temp1 * 6000 / 255) + 2000);
-    json += "},";
-    json += "\"zone2\":{";
-    json += "\"effect\":" + String(params.effect2) + ",";
-    json += "\"brightness\":" + String(params.val2) + ",";
-    json += "\"speed\":" + String(params.speed2) + ",";
-    json += "\"color\":" + String(params.color2) + ",";
-    json += "\"temp\":" + String((params.temp2 * 6000 / 255) + 2000);
+    json += "\"effect\":" + String(params.effect1) + ",\"brightness\":" + String(params.val1) + ",";
+    json += "\"speed\":" + String(params.speed1) + ",\"color\":" + String(params.color1) + ",";
+    json += "\"temp\":" + String((params.temp1 * 6000 / 255) + 2000) + ",\"saturation\":" + String(params.sat1) + ",\"hsvval\":" + String(params.hsvVal1);
+    json += "},\"zone2\":{";
+    json += "\"effect\":" + String(params.effect2) + ",\"brightness\":" + String(params.val2) + ",";
+    json += "\"speed\":" + String(params.speed2) + ",\"color\":" + String(params.color2) + ",";
+    json += "\"temp\":" + String((params.temp2 * 6000 / 255) + 2000) + ",\"saturation\":" + String(params.sat2) + ",\"hsvval\":" + String(params.hsvVal2);
     json += "}";
     if (params.numSplit == 3) {
       json += ",\"zone3\":{";
-      json += "\"effect\":" + String(params.effect3) + ",";
-      json += "\"brightness\":" + String(params.val3) + ",";
-      json += "\"speed\":" + String(params.speed3) + ",";
-      json += "\"color\":" + String(params.color3) + ",";
-      json += "\"temp\":" + String((params.temp3 * 6000 / 255) + 2000);
+      json += "\"effect\":" + String(params.effect3) + ",\"brightness\":" + String(params.val3) + ",";
+      json += "\"speed\":" + String(params.speed3) + ",\"color\":" + String(params.color3) + ",";
+      json += "\"temp\":" + String((params.temp3 * 6000 / 255) + 2000) + ",\"saturation\":" + String(params.sat3) + ",\"hsvval\":" + String(params.hsvVal3);
       json += "}";
     }
   } else {
@@ -599,9 +628,18 @@ void MyRequestHandler::handleGetSettings() {
     json += "\"brightness\":" + String(params.val) + ",";
     json += "\"speed\":" + String(params.speed) + ",";
     json += "\"color\":" + String(params.color) + ",";
-    json += "\"temp\":" + String((params.temp * 6000 / 255) + 2000);
+    json += "\"temp\":" + String((params.temp * 6000 / 255) + 2000) + ",";
+    json += "\"saturation\":" + String(params.sat) + ",";
+    json += "\"hsvval\":" + String(params.hsvVal);
   }
-  
+  json += ",\"motion_enabled\":" + String(advParams.moveMode ? 1 : 0);
+  json += ",\"motion_timeout\":" + String(advParams.timeOut);
+  json += ",\"auto_brightness\":" + String(advParams.brightMode ? 1 : 0);
+  json += ",\"aim_light\":" + String(advParams.aimLight);
+  json += ",\"als_k\":" + String(advParams.k, 4);
+  json += ",\"delay_als\":" + String(advParams.delayALS);
+  json += ",\"timer_enabled\":" + String(advParams.timEnable ? 1 : 0);
+  json += ",\"timer_interval\":" + String(advParams.interval);
   json += "}";
   
   _server.send(200, "application/json", json);

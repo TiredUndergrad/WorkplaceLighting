@@ -2,7 +2,7 @@
 #include <math.h>
 
 LedStripController::LedStripController(CRGB* leds, uint16_t ledCount, uint8_t dataPin)
-  : _leds(leds), _ledCount(ledCount), _dataPin(dataPin), _splittingMode(false), _isOn(false),
+  : _leds(leds), _ledCount(ledCount), _dataPin(dataPin), _splittingMode(false), _isOn(false), _userRequestedOff(false),
     _rainbowPreviousMillis(0), _twinklePreviousMillis(0), _purplePreviousMillis(0),
     _twinkleHue(0), _purpleHue(160) {
   // Инициализация параметров эффекта по умолчанию
@@ -11,11 +11,21 @@ LedStripController::LedStripController(CRGB* leds, uint16_t ledCount, uint8_t da
   _effectParams.speed = 1;
   _effectParams.color = 0;
   _effectParams.temp = 1;
+  _effectParams.sat = 255;
+  _effectParams.hsvVal = 255;
   _effectParams.startFrom = 0;
   _effectParams.end = ledCount;
   
   // Инициализация параметров разделения
   _splittingParams.numSplit = 0;
+
+  // Реестр эффектов: новый эффект = добавить метод + одну строку сюда
+  _effectHandlers[0] = &LedStripController::effectStatic;
+  _effectHandlers[1] = &LedStripController::effectTemperature;
+  _effectHandlers[2] = &LedStripController::effectRainbow;
+  _effectHandlers[3] = &LedStripController::effectPulse;
+  _effectHandlers[4] = &LedStripController::effectTwinkle;
+  _effectHandlers[5] = &LedStripController::effectSmoothPurple;
 }
 
 void LedStripController::begin() {
@@ -101,47 +111,59 @@ void LedStripController::update() {
   }
   
   if (_splittingMode) {
-    // Режим разделения на зоны
+    EffectParams p;
     if (_splittingParams.numSplit == 2) {
-      switchEffect(_splittingParams.effect1, _splittingParams.val1, _splittingParams.speed1,
-                   _splittingParams.color1, _splittingParams.temp1, 0, _ledCount / 2);
-      switchEffect(_splittingParams.effect2, _splittingParams.val2, _splittingParams.speed2,
-                   _splittingParams.color2, _splittingParams.temp2, _ledCount / 2, _ledCount);
+      p = { _splittingParams.effect1, _splittingParams.val1, _splittingParams.speed1,
+            _splittingParams.color1, _splittingParams.temp1, _splittingParams.sat1, _splittingParams.hsvVal1,
+            0, (uint8_t)(_ledCount / 2) };
+      switchEffect(p);
+      p = { _splittingParams.effect2, _splittingParams.val2, _splittingParams.speed2,
+            _splittingParams.color2, _splittingParams.temp2, _splittingParams.sat2, _splittingParams.hsvVal2,
+            (uint8_t)(_ledCount / 2), (uint8_t)_ledCount };
+      switchEffect(p);
     } else if (_splittingParams.numSplit == 3) {
-      switchEffect(_splittingParams.effect1, _splittingParams.val1, _splittingParams.speed1,
-                   _splittingParams.color1, _splittingParams.temp1, 0, _ledCount / 3);
-      switchEffect(_splittingParams.effect2, _splittingParams.val2, _splittingParams.speed2,
-                   _splittingParams.color2, _splittingParams.temp2, _ledCount / 3, (_ledCount * 2) / 3);
-      switchEffect(_splittingParams.effect3, _splittingParams.val3, _splittingParams.speed3,
-                   _splittingParams.color3, _splittingParams.temp3, (_ledCount * 2) / 3, _ledCount);
+      p = { _splittingParams.effect1, _splittingParams.val1, _splittingParams.speed1,
+            _splittingParams.color1, _splittingParams.temp1, _splittingParams.sat1, _splittingParams.hsvVal1,
+            0, (uint8_t)(_ledCount / 3) };
+      switchEffect(p);
+      p = { _splittingParams.effect2, _splittingParams.val2, _splittingParams.speed2,
+            _splittingParams.color2, _splittingParams.temp2, _splittingParams.sat2, _splittingParams.hsvVal2,
+            (uint8_t)(_ledCount / 3), (uint8_t)((_ledCount * 2) / 3) };
+      switchEffect(p);
+      p = { _splittingParams.effect3, _splittingParams.val3, _splittingParams.speed3,
+            _splittingParams.color3, _splittingParams.temp3, _splittingParams.sat3, _splittingParams.hsvVal3,
+            (uint8_t)((_ledCount * 2) / 3), (uint8_t)_ledCount };
+      switchEffect(p);
     }
   } else {
-    // Обычный режим - один эффект на всю ленту
-    switchEffect(_effectParams.effect, _effectParams.val, _effectParams.speed,
-                 _effectParams.color, _effectParams.temp, _effectParams.startFrom, _effectParams.end);
+    switchEffect(_effectParams);
   }
   
   FastLED.show();
 }
 
-void LedStripController::setEffect(uint8_t effect, uint8_t val, uint8_t speed, uint8_t color, uint8_t temp) {
+void LedStripController::setEffect(uint8_t effect, uint8_t val, uint8_t speed, uint8_t color, uint8_t temp, uint8_t sat, uint8_t hsvVal) {
   _splittingMode = false;
   _effectParams.effect = effect;
   _effectParams.val = val;
   _effectParams.speed = speed;
   _effectParams.color = color;
   _effectParams.temp = temp;
+  _effectParams.sat = sat;
+  _effectParams.hsvVal = hsvVal;
   _effectParams.startFrom = 0;
   _effectParams.end = _ledCount;
 }
 
-void LedStripController::setZoneEffect(uint8_t effect, uint8_t val, uint8_t speed, uint8_t color, uint8_t temp, uint8_t startFrom, uint8_t end) {
+void LedStripController::setZoneEffect(uint8_t effect, uint8_t val, uint8_t speed, uint8_t color, uint8_t temp, uint8_t startFrom, uint8_t end, uint8_t sat, uint8_t hsvVal) {
   _splittingMode = false;
   _effectParams.effect = effect;
   _effectParams.val = val;
   _effectParams.speed = speed;
   _effectParams.color = color;
   _effectParams.temp = temp;
+  _effectParams.sat = sat;
+  _effectParams.hsvVal = hsvVal;
   _effectParams.startFrom = startFrom;
   _effectParams.end = end;
 }
@@ -149,6 +171,15 @@ void LedStripController::setZoneEffect(uint8_t effect, uint8_t val, uint8_t spee
 void LedStripController::setSplitting(const SplittingParams& params) {
   _splittingMode = true;
   _splittingParams = params;
+}
+
+void LedStripController::setBrightness(uint8_t val) {
+  _effectParams.val = val;
+  if (_splittingMode) {
+    _splittingParams.val1 = val;
+    _splittingParams.val2 = val;
+    _splittingParams.val3 = val;
+  }
 }
 
 EffectParams LedStripController::getCurrentEffect() const {
@@ -163,27 +194,102 @@ bool LedStripController::isSplittingMode() const {
   return _splittingMode;
 }
 
-void LedStripController::turnOn() {
-  _isOn = true;
+void LedStripController::debugPrintParams() const {
+  Serial.println(F("--- LedStripController params ---"));
+  Serial.print(F("_isOn=")); Serial.println(_isOn);
+  Serial.print(F("_splittingMode=")); Serial.println(_splittingMode);
+  Serial.println(F("_effectParams:"));
+  Serial.print(F("  effect=")); Serial.println(_effectParams.effect);
+  Serial.print(F("  val=")); Serial.println(_effectParams.val);
+  Serial.print(F("  speed=")); Serial.println(_effectParams.speed);
+  Serial.print(F("  color=")); Serial.println(_effectParams.color);
+  Serial.print(F("  temp=")); Serial.println(_effectParams.temp);
+  Serial.print(F("  sat=")); Serial.println(_effectParams.sat);
+  Serial.print(F("  hsvVal=")); Serial.println(_effectParams.hsvVal);
+  Serial.print(F("  startFrom=")); Serial.println(_effectParams.startFrom);
+  Serial.print(F("  end=")); Serial.println(_effectParams.end);
+  Serial.println(F("_splittingParams:"));
+  Serial.print(F("  numSplit=")); Serial.println(_splittingParams.numSplit);
+  Serial.print(F("  zone1: effect=")); Serial.print(_splittingParams.effect1);
+  Serial.print(F(" val=")); Serial.print(_splittingParams.val1);
+  Serial.print(F(" speed=")); Serial.print(_splittingParams.speed1);
+  Serial.print(F(" color=")); Serial.print(_splittingParams.color1);
+  Serial.print(F(" temp=")); Serial.print(_splittingParams.temp1);
+  Serial.print(F(" sat=")); Serial.print(_splittingParams.sat1);
+  Serial.print(F(" hsvVal=")); Serial.println(_splittingParams.hsvVal1);
+  Serial.print(F("  zone2: effect=")); Serial.print(_splittingParams.effect2);
+  Serial.print(F(" val=")); Serial.print(_splittingParams.val2);
+  Serial.print(F(" speed=")); Serial.print(_splittingParams.speed2);
+  Serial.print(F(" color=")); Serial.print(_splittingParams.color2);
+  Serial.print(F(" temp=")); Serial.print(_splittingParams.temp2);
+  Serial.print(F(" sat=")); Serial.print(_splittingParams.sat2);
+  Serial.print(F(" hsvVal=")); Serial.println(_splittingParams.hsvVal2);
+  Serial.print(F("  zone3: effect=")); Serial.print(_splittingParams.effect3);
+  Serial.print(F(" val=")); Serial.print(_splittingParams.val3);
+  Serial.print(F(" speed=")); Serial.print(_splittingParams.speed3);
+  Serial.print(F(" color=")); Serial.print(_splittingParams.color3);
+  Serial.print(F(" temp=")); Serial.print(_splittingParams.temp3);
+  Serial.print(F(" sat=")); Serial.print(_splittingParams.sat3);
+  Serial.print(F(" hsvVal=")); Serial.println(_splittingParams.hsvVal3);
+  Serial.println(F("----------------------------------"));
 }
 
-void LedStripController::turnOff() {
+String LedStripController::getStatusForLog() const {
+  String s = F("LED: ");
+  s += _isOn ? F("ON") : F("OFF");
+  if (_isOn) {
+    if (_splittingMode) {
+      s += F(" split=");
+      s += _splittingParams.numSplit;
+      s += F(" z1(e=");
+      s += _splittingParams.effect1;
+      s += F(",v=");
+      s += _splittingParams.val1;
+      s += F(") z2(e=");
+      s += _splittingParams.effect2;
+      s += F(",v=");
+      s += _splittingParams.val2;
+      s += F(") z3(e=");
+      s += _splittingParams.effect3;
+      s += F(",v=");
+      s += _splittingParams.val3;
+      s += F(")");
+    } else {
+      s += F(" effect=");
+      s += _effectParams.effect;
+      s += F(" val=");
+      s += _effectParams.val;
+      s += F(" speed=");
+      s += _effectParams.speed;
+      s += F(" color=");
+      s += _effectParams.color;
+      s += F(" sat=");
+      s += _effectParams.sat;
+      s += F(" hsvVal=");
+      s += _effectParams.hsvVal;
+    }
+  }
+  return s;
+}
+
+void LedStripController::turnOn() {
+  _isOn = true;
+  _userRequestedOff = false;
+}
+
+void LedStripController::turnOff(bool byUser) {
   _isOn = false;
+  if (byUser) _userRequestedOff = true;
   FastLED.clear();
   FastLED.show();
 }
 
 //--------------------------Температура белого цвета---------------------------------
-void LedStripController::temperature(uint8_t val, uint8_t temp, uint8_t startFrom, uint8_t end) {
-  // Преобразуем temp (0-255) в цветовую температуру (2000-8000K)
-  float kelvin = 2000.0 + (temp / 255.0) * 6000.0;
-  
-  // Алгоритм Таннера Хеллэнда для преобразования температуры в RGB
-  // Источник: http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+void LedStripController::effectTemperature(const EffectParams& p) {
+  float kelvin = 2000.0 + (p.temp / 255.0) * 6000.0;
   float temp_kelvin = kelvin / 100.0;
   float red, green, blue;
   
-  // Красный компонент
   if (temp_kelvin <= 66) {
     red = 255;
   } else {
@@ -193,7 +299,6 @@ void LedStripController::temperature(uint8_t val, uint8_t temp, uint8_t startFro
     if (red > 255) red = 255;
   }
   
-  // Зеленый компонент
   if (temp_kelvin <= 66) {
     green = temp_kelvin;
     green = 99.4708025861 * log(green) - 161.1195681661;
@@ -206,13 +311,11 @@ void LedStripController::temperature(uint8_t val, uint8_t temp, uint8_t startFro
     if (green > 255) green = 255;
   }
   
-  // Синий компонент
   if (temp_kelvin >= 66) {
     blue = 255;
   } else {
-    if (temp_kelvin <= 19) {
-      blue = 0;
-    } else {
+    if (temp_kelvin <= 19) blue = 0;
+    else {
       blue = temp_kelvin - 10;
       blue = 138.5177312231 * log(blue) - 305.0447927307;
       if (blue < 0) blue = 0;
@@ -221,134 +324,94 @@ void LedStripController::temperature(uint8_t val, uint8_t temp, uint8_t startFro
   }
   
   CRGB color((uint8_t)red, (uint8_t)green, (uint8_t)blue);
-  
-  for (int i = startFrom; i < end; i++) {
+  for (int i = p.startFrom; i < p.end; i++) {
     _leds[i] = color;
-    _leds[i].nscale8(val);  // Установка яркости
+    _leds[i].nscale8(p.val);
   }
 }
 
-//---------------------------Эффект статического свечения---------------------------
-void LedStripController::statick(uint8_t val, uint8_t color, uint8_t startFrom, uint8_t end) {
-  for (int i = startFrom; i < end; i++) {
-    _leds[i] = CHSV(color, 255, 255);  // Изменение цвета
-    _leds[i].maximizeBrightness(val);  // Яркость ленты
+//---------------------------Эффект статического свечения (H, S, V из параметров)-----
+void LedStripController::effectStatic(const EffectParams& p) {
+  for (int i = p.startFrom; i < p.end; i++) {
+    _leds[i] = CHSV(p.color, p.sat, p.hsvVal);
+    _leds[i].nscale8(p.val);  // Общая яркость
   }
 }
 
 //-----------------------------Эффект бегущей радуги---------------------------------
-void LedStripController::rainbow(uint8_t val, uint8_t speed, uint8_t startFrom, uint8_t end) {
-  int waveSpeed = 15;  // Скорость движения волны (меньше значение - быстрее)
-  unsigned long currentMillis = millis();  // Текущее время
-  const long interval = 1000 / (end - startFrom);  // Интервал для обновления волны
-  
-  // Условие проверяющее, прошло ли достаточно времени с момента последнего обновления светодиодов
+void LedStripController::effectRainbow(const EffectParams& p) {
+  const int waveSpeed = 15;
+  unsigned long currentMillis = millis();
+  const long interval = (p.end - p.startFrom) > 0 ? 1000 / (p.end - p.startFrom) : 50;
+
   if (currentMillis - _rainbowPreviousMillis >= interval) {
-    for (int i = startFrom; i < end; i++) {
-      // Вычисление индекса цвета для текущего светодиода
-      int colorIndex = i * 256 / (end - startFrom) + millis() * speed / waveSpeed;
-      // Установка цвета текущего светодиода
+    for (int i = p.startFrom; i < p.end; i++) {
+      int colorIndex = (i - p.startFrom) * 256 / (p.end - p.startFrom) + millis() * p.speed / waveSpeed;
       _leds[i] = CHSV(colorIndex, 255, 255);
-      _leds[i].nscale8(val);
+      _leds[i].nscale8(p.val);
     }
-    _rainbowPreviousMillis = currentMillis;  // Обновляем время предыдущего срабатывания
+    _rainbowPreviousMillis = currentMillis;
   }
 }
 
 //------------------------------Эффект пульсации---------------------------------
-void LedStripController::pulse(uint8_t val, uint8_t speed, uint8_t startFrom, uint8_t end) {
-  // Минимальная и максимальная яркость для эффекта "Пульсация"
+void LedStripController::effectPulse(const EffectParams& p) {
   static uint8_t minVal = 0;
-  uint8_t maxVal = val;
-
-  // Время одного цикла пульсации (в миллисекундах)
-  int cycleTime = 3000;
-
-  // Массив цветов радуги (в порядке: красный, оранжевый, желтый, зеленый, голубой, синий, фиолетовый)
+  const int cycleTime = 3000;
   CRGB colors[] = { CRGB::Red, CRGB::Orange, CRGB::Yellow, CRGB::Green, CRGB::Blue, CRGB::Indigo, CRGB::Violet };
 
-  // Вычисление текущей яркости в зависимости от времени
-  unsigned long currentMillis = millis() * speed;
-  int brightness = map(constrain(currentMillis % cycleTime, 0, cycleTime), 0, cycleTime, minVal, maxVal);
-
-  // Определение текущего цвета в зависимости от времени
+  unsigned long currentMillis = millis() * p.speed;
+  int brightness = map(constrain(currentMillis % cycleTime, 0, cycleTime), 0, cycleTime, minVal, p.val);
   uint8_t colorIndex = (currentMillis / cycleTime) % (sizeof(colors) / sizeof(colors[0]));
   CRGB color = colors[colorIndex];
   
-  for (int i = startFrom; i < end; i++) {
-    _leds[i] = color;                          // Установка текущего цвета
-    _leds[i].fadeToBlackBy(255 - brightness);  // Изменение яркости
+  for (int i = p.startFrom; i < p.end; i++) {
+    _leds[i] = color;
+    _leds[i].fadeToBlackBy(255 - brightness);
   }
 }
 
 //---------------------------------Эффект мерцание-----------------------------------
-void LedStripController::twinkleEffect(uint8_t val, uint8_t speed, uint8_t startFrom, uint8_t end) {
-  static uint8_t saturation = 255;  // Насыщенность (максимальная насыщенность)
-  int speedEffect = 10;              // Начальная скорость изменения цвета (в миллисекундах)
+void LedStripController::effectTwinkle(const EffectParams& p) {
+  const int speedEffect = 10;
+  unsigned long currentMillis = p.speed * millis();
 
-  unsigned long currentMillis = speed * millis();  // Текущее время в миллисекундах
-
-  if (currentMillis - _twinklePreviousMillis >= speedEffect) {  // Если прошло достаточно времени с момента последнего обновления
-    _twinklePreviousMillis = currentMillis;                     // Обновление времени последнего обновления
-    _twinkleHue++;                                              // Увеличение оттенка цвета
+  if (currentMillis - _twinklePreviousMillis >= speedEffect) {
+    _twinklePreviousMillis = currentMillis;
+    _twinkleHue++;
   }
-  
-  for (int i = startFrom; i < end; i++) {
-    _leds[i] = CHSV(_twinkleHue, saturation, val);  // Устанавливаем текущий цвет на все светодиоды
+  for (int i = p.startFrom; i < p.end; i++) {
+    _leds[i] = CHSV(_twinkleHue, p.sat, p.val);
   }
 }
 
 //-------------------------------Эффект переливания фиолетового----------------------
-void LedStripController::smoothPurpleEffect(uint8_t val, uint8_t speed, uint8_t startFrom, uint8_t end) {
-  int cycleTime = 3000;  // Время одного цикла переливания (в миллисекундах)
+void LedStripController::effectSmoothPurple(const EffectParams& p) {
+  const int cycleTime = 3000;
+  unsigned long currentMillis = millis() * p.speed;
+  float position = fmod((float)currentMillis, (float)cycleTime) / cycleTime;
 
-  unsigned long currentMillis = millis() * speed;               // Текущее время в миллисекундах
-  float position = fmod(currentMillis, cycleTime) / cycleTime;  // Вычисление позиции переливания (Лежит от 0. до 1.)
-
-  CRGB colorStart = CHSV(140, 255, val);  // Фиолетовый цвет
-  CRGB colorEnd = CHSV(200, 255, val);    // Бирюзовый цвет
-  CRGB color;                             // Переменная с вычисленным цветом
-
-  // Плавное переливание цвета между colorStart (фиолетовый цвет) и colorEnd (бирюзовый цвет) в зависимости от position
+  CRGB colorStart = CHSV(140, 255, p.val);
+  CRGB colorEnd = CHSV(200, 255, p.val);
+  CRGB color;
   if (position <= 0.5) {
     color = colorStart.nscale8(255 - position * 510) + colorEnd.nscale8(position * 510);
   } else {
-    position = 1 - position;
-    color = colorStart.nscale8(255 - position * 510) + colorEnd.nscale8(position * 510);
+    float pos = 1 - position;
+    color = colorStart.nscale8(255 - pos * 510) + colorEnd.nscale8(pos * 510);
   }
-
-  // Заполнение светодиодов вычисленными цветами
-  for (int i = startFrom; i < end; i++) {
+  for (int i = p.startFrom; i < p.end; i++) {
     _leds[i] = color;
   }
 }
 
-//------------------------Переключение эффектов--------------------------------------
-void LedStripController::switchEffect(uint8_t effect, uint8_t val, uint8_t speed, uint8_t color, uint8_t temp, uint8_t startFrom, uint8_t end) {
-  switch (effect) {
-    case 0:
-      statick(val, color, startFrom, end);  // Статический эффект
-      break;
-    case 1:
-      temperature(val, temp, startFrom, end);  // Эффект "температура"
-      break;
-    case 2:
-      rainbow(val, speed, startFrom, end);  // Эффект "волна"
-      break;
-    case 3:
-      pulse(val, speed, startFrom, end);  // Эффект пульсации
-      break;
-    case 4:
-      twinkleEffect(val, speed, startFrom, end);  // Эффект мерцание
-      break;
-    case 5:
-      smoothPurpleEffect(val, speed, startFrom, end);  // Эффект переливания фиолетового
-      break;
-    default:
-      // По умолчанию - выключено
-      for (int i = startFrom; i < end; i++) {
-        _leds[i] = CRGB::Black;
-      }
-      break;
+//------------------------Переключение эффектов (реестр)-----------------------------
+void LedStripController::switchEffect(const EffectParams& params) {
+  if (params.effect < EFFECT_COUNT && _effectHandlers[params.effect]) {
+    (this->*_effectHandlers[params.effect])(params);
+  } else {
+    for (int i = params.startFrom; i < params.end; i++) {
+      _leds[i] = CRGB::Black;
+    }
   }
 }
