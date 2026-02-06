@@ -1,79 +1,149 @@
 /* ===== ОБЩИЕ СТИЛИ ===== */
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary: #ec4899;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --dark: #1f2937;
+    --light: #f8fafc;
+    --gray: #6b7280;
+    --gray-light: #e5e7eb;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 20px;
-    background-color: #f4f4f9;
-    color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--dark);
     line-height: 1.6;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    background-color: white;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
     padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    border-radius: 24px;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 0 100px rgba(99, 102, 241, 0.1);
+    text-align: left;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-h1, h2 {
-    color: #4CAF50;
+h1,
+h2 {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    position: relative;
 }
 
 h1 {
-    font-size: 2rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 30px;
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
+    border-radius: 2px;
 }
 
 h2 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 25px;
 }
 
 p {
     font-size: 1.1rem;
     margin: 10px 0;
-    text-align: center;
+    text-align: left;
+    color: var(--dark);
 }
 
 /* ===== СТИЛИ ДЛЯ КНОПОК ===== */
-button {
-    font-size: 1.2rem;
-    padding: 12px 25px;
-    margin: 10px;
+.btn {
+    font-size: 1.1rem;
+    padding: 14px 28px;
+    margin: 8px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     color: white;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-block;
     min-width: 150px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-button.on {
-    background-color: #4CAF50;
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
 }
 
-button.off {
-    background-color: #f44336;
+.btn:hover::before {
+    left: 100%;
 }
 
-button:hover {
-    opacity: 0.8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-button:active {
-    transform: translateY(0);
+.btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-on {
+    background: linear-gradient(135deg, var(--success), #34d399);
+}
+
+.btn-off {
+    background: linear-gradient(135deg, var(--danger), #f87171);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
 }
 
 /* ===== СТИЛИ ДЛЯ КОНТЕЙНЕРА КНОПОК ===== */
 .button-container {
     text-align: center;
-    margin: 20px 0;
+    margin: 25px 0;
 }
 
 .button-container button {
@@ -81,486 +151,531 @@ button:active {
 }
 
 /* ===== СТИЛИ ДЛЯ ССЫЛОК ===== */
-a {
-    color: #4CAF50;
+.nav-container a {
+    color: var(--primary);
     text-decoration: none;
     display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    border: 2px solid #4CAF50;
-    border-radius: 6px;
+    margin-top: 25px;
+    padding: 12px 28px;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
     transition: all 0.3s ease;
+    font-weight: 600;
+    background: white;
+    position: relative;
+    overflow: hidden;
 }
 
-a:hover {
-    background-color: #4CAF50;
+.nav-container a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+    transition: 0.5s;
+}
+
+.nav-container a:hover::before {
+    left: 100%;
+}
+
+.nav-container a:hover {
+    background: var(--primary);
     color: white;
     transform: translateY(-2px);
-}
-
-/* ===== СТИЛИ ДЛЯ НАВИГАЦИИ ===== */
-.nav-container {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.nav-container a {
-    margin: 0 10px;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
 }
 
 /* ===== СТИЛИ ДЛЯ СОСТОЯНИЯ LED ===== */
-#led-state {
-    font-weight: bold;
-    color: #4CAF50;
+.status-section {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-#led-state:contains("ON") {
-    color: #4CAF50;
+.status-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
 }
 
-#led-state:contains("OFF") {
-    color: #f44336;
-}
-
-/* ===== СТИЛИ ДЛЯ ДАННЫХ ОСВЕЩЕННОСТИ ===== */
-#ambient-light {
-    font-weight: bold;
-    color: #2196F3;
-}
-
-/* ===== СТИЛИ ДЛЯ ФОРМ ===== */
-.form-group {
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #555;
-}
-
-input[type="text"], 
-input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease;
-}
-
-input[type="text"]:focus, 
-input[type="password"]:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-}
-
-/* ===== СТИЛИ ДЛЯ СЕТЕЙ WI-FI ===== */
-.scan-btn {
-    background-color: #2196F3;
-    width: 100%;
-    margin-bottom: 20px;
-}
-
-.save-btn {
-    background-color: #30b637;
-    width: 100%;
-    margin-bottom: 20px;
-}
-
-.network-list {
-    margin-bottom: 25px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.network-item {
-    padding: 15px;
-    border: 1px solid #ddd;
-    margin-bottom: 8px;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    background-color: #fafafa;
-}
-
-.network-item:hover {
-    background-color: #e8f5e8;
-    border-color: #4CAF50;
-    transform: translateX(5px);
-}
-
-.network-item:active {
-    background-color: #c8e6c9;
-}
-
-/* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-    
-    .container {
-        padding: 20px;
-        margin: 10px;
-    }
-    
-    h1 {
-        font-size: 1.5rem;
-    }
-    
-    h2 {
-        font-size: 1.3rem;
-    }
-    
-    p {
-        font-size: 1rem;
-    }
-    
-    button {
-        font-size: 1.1rem;
-        padding: 10px 20px;
-        margin: 8px;
-    }
-    
-    input[type="text"], 
-    input[type="password"] {
-        padding: 10px;
-        font-size: 0.9rem;
-    }
-}
-
-/* ===== СТИЛИ ДЛЯ БЛОКА СТАТУСА ===== */
-.status-container {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #ddd;
-}
-
-.status-container h3 {
-    margin-top: 0;
-    color: #333;
+.status-section p {
     font-size: 1.2rem;
-}
-
-.status-info {
-    text-align: left;
     margin: 15px 0;
+    text-align: center;
+    font-weight: 500;
 }
 
-.status-info p {
-    margin: 8px 0;
-    font-size: 1rem;
+#led-state {
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 50px;
+    margin-left: 10px;
+    display: inline-block;
+    min-width: 100px;
+    text-align: center;
+    animation: pulse 2s infinite;
 }
 
-.disconnect-btn {
-    background-color: #f44336;
-    margin-top: 15px;
+.status-on {
+    background: linear-gradient(135deg, var(--success), #34d399);
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
-.disconnect-btn:hover {
-    background-color: #d32f2f;
+.status-off {
+    background: linear-gradient(135deg, var(--danger), #f87171);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 
-/* ===== СТИЛИ ДЛЯ ЗАГРУЗКИ ===== */
-.loading {
-    color: #666;
-    font-style: italic;
-}
-
-/* ===== СТИЛИ ДЛЯ ОШИБОК ===== */
-.error {
-    color: #f44336;
-    background-color: #ffebee;
-    padding: 10px;
-    border-radius: 6px;
-    margin: 10px 0;
-    border-left: 4px solid #f44336;
-}
-
-/* ===== СТИЛИ ДЛЯ УСПЕХА ===== */
-.success {
-    color: #4CAF50;
-    background-color: #e8f5e8;
-    padding: 10px;
-    border-radius: 6px;
-    margin: 10px 0;
-    border-left: 4px solid #4CAF50;
+.ambient-value {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.3rem;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 8px 16px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-left: 10px;
 }
 
 /* ===== СТИЛИ ДЛЯ СЕКЦИЙ ===== */
 .section {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    border: 1px solid #e0e0e0;
+    margin-bottom: 35px;
+    padding: 25px;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid var(--gray-light);
     text-align: left;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.section:hover {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
 }
 
 .section h2 {
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     text-align: center;
-    color: #4CAF50;
-    font-size: 1.4rem;
-}
-
-.status-section {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f0f8ff;
-    border-radius: 8px;
-    border: 1px solid #b3d9ff;
-}
-
-.status-section p {
-    margin: 8px 0;
-    text-align: center;
-}
-
-/* ===== СТИЛИ ДЛЯ СТАТУСОВ ===== */
-.status-on {
-    color: #4CAF50;
-    font-weight: bold;
-}
-
-.status-off {
-    color: #f44336;
-    font-weight: bold;
-}
-
-.ambient-value {
-    color: #2196F3;
-    font-weight: bold;
+    font-size: 1.6rem;
 }
 
 /* ===== СТИЛИ ДЛЯ ГРУПП УПРАВЛЕНИЯ ===== */
 .control-group {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: white;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: linear-gradient(to bottom right, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.9));
+    border-radius: 16px;
+    border: 1px solid var(--gray-light);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.control-group:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.1);
+}
+
+.control-group.control-buttons {
+    text-align: center;
+    background: transparent;
+    border: none;
+    padding: 20px 0;
+}
+
+.control-group.control-buttons:hover {
+    box-shadow: none;
+    border: none;
 }
 
 .control-group label {
     display: block;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #555;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--dark);
     text-align: left;
+    font-size: 1.1rem;
 }
 
 .control-group select {
     width: 100%;
-    padding: 10px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
+    padding: 14px 18px;
+    border: 2px solid var(--gray-light);
+    border-radius: 12px;
     font-size: 1rem;
     box-sizing: border-box;
-    background-color: white;
+    background: white;
     cursor: pointer;
-    transition: border-color 0.3s ease;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 20px;
 }
 
 .control-group select:focus {
     outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-}
-
-/* ===== СТИЛИ ДЛЯ КНОПОК ===== */
-.btn {
-    font-size: 1.1rem;
-    padding: 12px 25px;
-    margin: 5px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: white;
-    transition: all 0.3s ease;
-    display: inline-block;
-    min-width: 120px;
-}
-
-.btn-on {
-    background-color: #4CAF50;
-}
-
-.btn-off {
-    background-color: #f44336;
-}
-
-.btn:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn:active {
-    transform: translateY(0);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 /* ===== СТИЛИ ДЛЯ СЛАЙДЕРОВ ===== */
 input[type="range"] {
     width: 100%;
-    height: 8px;
-    border-radius: 5px;
-    background: #ddd;
+    height: 10px;
+    border-radius: 10px;
+    background: linear-gradient(to right, var(--gray-light), var(--primary));
     outline: none;
     -webkit-appearance: none;
-    margin: 10px 0;
+    margin: 15px 0;
+    position: relative;
 }
 
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: #4CAF50;
+    background: white;
     cursor: pointer;
     transition: all 0.3s ease;
+    border: 3px solid var(--primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-    background: #45a049;
-    transform: scale(1.1);
+    background: var(--primary);
+    transform: scale(1.2);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: #4CAF50;
+    background: white;
     cursor: pointer;
-    border: none;
+    border: 3px solid var(--primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
 
 input[type="range"]::-moz-range-thumb:hover {
-    background: #45a049;
-    transform: scale(1.1);
+    background: var(--primary);
+    transform: scale(1.2);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
 }
 
 /* ===== СТИЛИ ДЛЯ ЦВЕТОВОГО ПИКЕРА ===== */
 .color-picker-container {
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 input[type="color"] {
     width: 100%;
-    height: 50px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
+    height: 60px;
+    border: 3px solid var(--gray-light);
+    border-radius: 16px;
     cursor: pointer;
-    margin-bottom: 15px;
-    transition: border-color 0.3s ease;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 input[type="color"]:hover {
-    border-color: #4CAF50;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .hsv-controls {
-    margin-top: 15px;
+    margin-top: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid var(--gray-light);
 }
 
-.hsv-controls > div {
-    margin-bottom: 15px;
+.hsv-controls>div {
+    margin-bottom: 20px;
 }
 
 .hsv-controls label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* ===== СТИЛИ ДЛЯ ТЕМПЕРАТУРЫ ===== */
-.temperature-scale {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 0.85rem;
-    color: #666;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: var(--dark);
 }
 
 /* ===== СТИЛИ ДЛЯ НАСТРОЕК ЗОН ===== */
 .zone-settings {
-    margin-bottom: 25px;
-    padding: 20px;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    border: 2px solid #4CAF50;
+    margin-bottom: 30px;
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+    border-radius: 20px;
+    border: 2px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.zone-settings:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.15);
+}
+
+.zone-settings::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
 }
 
 .zone-settings h3 {
     margin-top: 0;
-    margin-bottom: 15px;
-    color: #4CAF50;
-    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--primary);
+    font-size: 1.4rem;
     text-align: center;
+    font-weight: 700;
 }
 
 /* ===== СТИЛИ ДЛЯ ЧЕКБОКСОВ ===== */
 input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
     cursor: pointer;
-    accent-color: #4CAF50;
+    accent-color: var(--primary);
+    transform: scale(1.2);
 }
 
 .control-group label:has(input[type="checkbox"]) {
     display: flex;
     align-items: center;
     cursor: pointer;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    transition: all 0.3s ease;
 }
 
-/* ===== СТИЛИ ДЛЯ ТАЙМЕРА ===== */
-.timer-info {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #e3f2fd;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    color: #1976d2;
+.control-group label:has(input[type="checkbox"]):hover {
+    background: var(--gray-light);
+    transform: translateX(5px);
+}
+
+/* ===== СТИЛИ ДЛЯ ТАЙМЕРА И ПОДСКАЗОК ===== */
+.timer-info,
+.hint {
+    margin-top: 15px;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(99, 102, 241, 0.1));
+    border-radius: 12px;
+    font-size: 1rem;
+    color: var(--dark);
+    border-left: 4px solid var(--info);
 }
 
 .hint {
-    margin-top: 6px;
-    font-size: 0.85rem;
-    color: #666;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+    border-left-color: var(--warning);
+    font-size: 0.95rem;
+}
+
+.temperature-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: var(--gray);
+    font-weight: 500;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section,
+.control-group,
+.zone-settings {
+    animation: fadeIn 0.6s ease-out;
 }
 
 /* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
     .container {
-        max-width: 100%;
-        padding: 15px;
+        padding: 20px 15px;
+        border-radius: 20px;
+        margin: 10px auto;
     }
-    
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
     .section {
-        padding: 15px;
+        padding: 20px 15px;
+        margin-bottom: 25px;
     }
-    
+
+    .control-group {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 8px 0;
+        max-width: none;
+    }
+
+    .button-container button {
+        width: calc(50% - 16px);
+        margin: 8px;
+    }
+
+    .nav-container a {
+        width: 100%;
+        text-align: center;
+        margin: 15px 0;
+    }
+
     .zone-settings {
-        padding: 15px;
+        padding: 20px 15px;
+        margin-bottom: 25px;
     }
-    
-    .hsv-controls > div {
-        margin-bottom: 12px;
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
     }
-    
-    .temperature-scale {
-        flex-direction: column;
-        gap: 5px;
+
+    .status-section {
+        padding: 20px;
     }
+}
+
+/* Эффект стеклянного морфизма для особых элементов */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Улучшенные тени для кнопок */
+.btn-shadow {
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Градиентные границы */
+.gradient-border {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+        linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
+}
+
+/* Анимированный фон для кнопок включения */
+.btn-on::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--success), #34d399, var(--success));
+    border-radius: 14px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn-on:hover::after {
+    opacity: 1;
+}
+
+/* Индикаторы для слайдеров */
+.slider-container {
+    position: relative;
+}
+
+.slider-value {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
 }

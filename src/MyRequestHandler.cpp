@@ -406,16 +406,34 @@ void MyRequestHandler::handleSaveWiFi() {
   Serial.println("=== handleSaveWiFi END ===\n");
 }
 
+// void MyRequestHandler::handleScanWiFi() {
+//   int n = WiFi.scanNetworks();
+//   String json = "{\"networks\": [";
+  
+//   for (int i = 0; i < n; ++i) {
+//     if (i) json += ",";
+//     json += "{\"ssid\":\"" + WiFi.SSID(i) + "\",\"rssi\":" + WiFi.RSSI(i) + "}";
+//   }
+//   json += "]}";
+  
+//   _server.send(200, "application/json", json);
+// }
+
 void MyRequestHandler::handleScanWiFi() {
   int n = WiFi.scanNetworks();
   String json = "{\"networks\": [";
-  
+
   for (int i = 0; i < n; ++i) {
     if (i) json += ",";
-    json += "{\"ssid\":\"" + WiFi.SSID(i) + "\",\"rssi\":" + WiFi.RSSI(i) + "}";
+    json += "{\"ssid\":\"" + WiFi.SSID(i) + "\",";
+    json += "\"rssi\":" + String(WiFi.RSSI(i)) + ",";
+    json +=
+        "\"encrypted\":" +
+        String(WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "true" : "false") +
+        "}";
   }
   json += "]}";
-  
+
   _server.send(200, "application/json", json);
 }
 
