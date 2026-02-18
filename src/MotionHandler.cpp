@@ -8,34 +8,23 @@ void MotionHandler::begin() {
   pinMode(_pin, INPUT);
 }
 
-void MotionHandler::update(const AdvParams& params, uint8_t& motionMaxBrightness,
+void MotionHandler::update(const AdvParams& params, 
+                           uint8_t& motionMaxBrightness,
                            LedStripController* led) {
   if (!led) return;
 
   unsigned long now = millis();
-  unsigned long secNow = now / 1000UL;  // таймаут в секундах (params.timeOut — сек)
+  unsigned long secNow = now / 1000UL;
 
-  // Система выключена — при движении включаем ленту только если выключилась по таймауту (не пользователем)
-  if (!led->isOn()) {
-    if (params.moveMode) {
-      bool motionNow = (digitalRead(_pin) == HIGH);
-      if (motionNow && !led->wasTurnedOffByUser()) {
-        _motionState = true;
-        _moveTimeSec = secNow;
-        led->turnOn();
-        if (!_savedMaxOnEnable) {
-          motionMaxBrightness = 200;
-          _savedMaxOnEnable = true;
-        }
-      }
-    } else {
-      _savedMaxOnEnable = false;
-      _motionState = true;
-      _moveTimeSec = secNow;
+  static bool lastState = false;
+
+  if (params.moveMode != lastState) {
+    lastState = params.moveMode;
+    if (!params.moveMode) {
+      led->setBlock(false);
     }
-    return;
   }
-
+  
   if (params.moveMode) {
     if (!_savedMaxOnEnable) {
       motionMaxBrightness = led->getCurrentEffect().val;
@@ -52,7 +41,7 @@ void MotionHandler::update(const AdvParams& params, uint8_t& motionMaxBrightness
 
     uint8_t cur = led->getCurrentEffect().val;
     if (_motionState) {
-      led->turnOn();
+      led->setBlock(false);
       if (now - _prevMillis >= 10 && !params.brightMode) {
         _prevMillis = now;
         if (cur < motionMaxBrightness)
@@ -64,7 +53,7 @@ void MotionHandler::update(const AdvParams& params, uint8_t& motionMaxBrightness
         if (cur > 0) {
           led->setBrightness((uint8_t)constrain((int)cur - 5, 0, 255));
         } else {
-          led->turnOff(false);  // погасло по таймауту — при следующем движении снова включить
+          led->setBlock(true);  // погасло по таймауту — при следующем движении снова включить
         }
       }
     }

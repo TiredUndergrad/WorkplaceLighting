@@ -31,9 +31,11 @@ public:
     void handleWiFiStatus();
     void handleDisconnectWiFi();
     
-    // Новые обработчики для LED контроллера
-    void handleSetEffect();
-    void handleSetSplitting();
+    // Обработчики для LED контроллера
+    void handleSetMode();           // Новый: установка режима (общий/индивидуальный)
+    void handleSetEffect();          // Установка эффекта для общего режима
+    void handleSetZoneEffect();      // Новый: установка эффекта для конкретной зоны
+    void handleSetSplitting();       // Для обратной совместимости
     void handleSetMotion();
     void handleSetALS();
     void handleSetTimer();

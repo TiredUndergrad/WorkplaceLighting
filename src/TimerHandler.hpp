@@ -3,35 +3,55 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "LedStripController.hpp"
 #include "AdvParams.h"
 
-/**
- * Таймер напоминаний: по истечении интервала (в минутах) лента
- * моргает красным 7 раз (500 мс вкл / 500 мс выкл) как напоминание.
- */
 class TimerHandler {
 public:
-  TimerHandler(CRGB* leds, uint16_t ledCount);
+    TimerHandler(LedStripController* ledController);
+    
+    // Обновление состояния таймера, возвращает true если идёт мигание
+    bool update(const AdvParams& params, bool systemOn);
 
-  /**
-   * Вызывать в loop().
-   * @param systemOn true, если система (лента) включена пользователем — иначе моргание не показываем
-   * @return true, если идёт фаза моргания (уже вызван FastLED.show(), не вызывать ledController.update())
-   */
-  bool update(const AdvParams& params, bool systemOn = true);
-
-  /// Строка состояния для лога: таймер, интервал, фаза моргания
-  String getStatusForLog(const AdvParams& params) const;
+    /// Идёт ли сейчас мигание
+    bool isBlinking() const { return _blinkActive; }
+    
+    // Получение статуса для лога
+    String getStatusForLog(const AdvParams& params) const;
+    
+    // Принудительная остановка мигания
+    void stopBlinking();
 
 private:
-  CRGB* _leds;
-  uint16_t _ledCount;
-  bool _start;               // первый запуск после включения таймера
-  unsigned long _previousMin;
-  bool _blinkActive;
-  uint8_t _blinkCount;
-  bool _blinkRedOn;
-  unsigned long _previousBlinkMillis;
+    LedStripController* _ledController;
+    
+    // Переменные для отсчета времени
+    bool _start;
+    unsigned long _previousMin;
+    
+    // Переменные для мигания
+    bool _blinkActive;
+    uint8_t _blinkCount;
+    bool _blinkState;  // true - подсветка включена (макс яркость), false - выключена
+    unsigned long _previousBlinkMillis;
+    
+    // Сохраненные параметры для восстановления
+    bool _savedSplittingMode;
+    SplittingParams _savedSplitParams;
+    EffectParams _savedGlobalParams;
+    
+    // Константы
+    static const unsigned long BLINK_INTERVAL_MS = 500;
+    static const uint8_t BLINK_COUNT = 7;
+    
+    // Сохранение текущих параметров подсветки
+    void saveCurrentParameters();
+    
+    // Восстановление сохраненных параметров
+    void restoreParameters();
+    
+    // Применение максимальной яркости к текущим параметрам
+    void applyMaxBrightness();
 };
 
 #endif

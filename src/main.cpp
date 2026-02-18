@@ -23,15 +23,25 @@ AdvParams advParams = { false, 700, 0.02f, 3, false, 60, false, 60 };
 uint8_t motionMaxBrightness = 200;
 
 const int ledPin = 2;
-const int ledStripPin = 4;
-const int ledCount = 60;
-const int motionSensorPin = 13;
+const int motionSensorPin = 12;
 
-CRGB leds[ledCount];
-LedStripController ledController(leds, ledCount, ledStripPin);
+// Определяем количество светодиодов для каждой ленты
+#define NUM_LEDS_1 60
+#define NUM_LEDS_2 60
+#define NUM_LEDS_3 60
+
+// Объявляем три отдельных массива для трёх лент
+CRGB leds1[NUM_LEDS_1];
+CRGB leds2[NUM_LEDS_2];
+CRGB leds3[NUM_LEDS_3];
+
+// Создаём контроллер с тремя лентами
+LedStripController ledController(leds1, NUM_LEDS_1, leds2, NUM_LEDS_2, leds3, NUM_LEDS_3);
+
+// Создаём подсистемы (таймер, движение, автояркость)
 MotionHandler motionHandler(motionSensorPin);
 ALSController alsController;
-TimerHandler timerHandler(leds, ledCount);
+TimerHandler timerHandler(&ledController);
 
 WebServer server(80);
 MyRequestHandler handler(server, ledPin, &ledController);
@@ -66,8 +76,17 @@ void setup() {
   Wire.begin();
 
   if (SPIFFS.begin(true)) Serial.println("SPIFFS opened!");
+  
+  // Инициализация трёх независимых лент на разных пинах
+  FastLED.addLeds<WS2812B, 4, GRB>(leds1, NUM_LEDS_1);   // Лента 1 на пине 4
+  FastLED.addLeds<WS2812B, 16, GRB>(leds2, NUM_LEDS_2);  // Лента 2 на пине 16
+  FastLED.addLeds<WS2812B, 17, GRB>(leds3, NUM_LEDS_3);  // Лента 3 на пине 17
+  
   ledController.begin();
   Serial.println("LED Strip Controller initialized");
+
+  // Главный — LED-контроллер: получает указатели на подсистемы и оркестрирует их в update()
+  ledController.setDependencies(&timerHandler, &motionHandler, &alsController);
 
   motionHandler.begin();
   handler.begin();
@@ -103,13 +122,8 @@ void loop() {
 
   apds.readAmbientLight(ambient_light);
 
-  // Таймер напоминаний: при моргании не обновляем обычные эффекты; при выключенной системе не моргаем
-  if (timerHandler.update(advParams, ledController.isOn()))
-    return;
-
-  motionHandler.update(advParams, motionMaxBrightness, &ledController);
-  alsController.update(ambient_light, advParams, &ledController, motionHandler.isMotionActive());
-  ledController.update();
+  // Единая точка обновления: таймер → движение → ALS → отрисовка (всё внутри контроллера)
+  ledController.update(advParams, motionMaxBrightness, ambient_light);
 
   temp = calculateColorTemperature(r, g, b);
 

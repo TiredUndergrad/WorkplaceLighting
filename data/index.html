@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>RGB LED Контроллер</title>
   <link rel="stylesheet" href="main.css">
 </head>
@@ -14,10 +14,50 @@
     <div class="circle circle-3"></div>
   </div>
 
-  <!-- CSS для декоративных элементов -->
   <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #ec4899;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #06b6d4;
+      --dark: #1f2937;
+      --light: #f8fafc;
+      --gray: #6b7280;
+      --gray-light: #e5e7eb;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: var(--dark);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
     .decoration {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -56,46 +96,750 @@
       left: -75px;
       background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(236, 72, 153, 0.1));
     }
+
+    h1 {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    h2 {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    /* Улучшенный статус-бар */
+    .status-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+      padding: 10px 15px;
+      border-radius: 40px;
+      margin-bottom: 25px;
+      border: 2px solid rgba(99, 102, 241, 0.2);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      backdrop-filter: blur(5px);
+      flex-wrap: wrap;
+    }
+    
+    .status-bar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    
+    .status-label {
+      color: var(--dark);
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+    
+    .status-value {
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 30px;
+      display: inline-block;
+      min-width: 60px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    
+    .ambient-value {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: rgba(99, 102, 241, 0.1);
+      padding: 3px 12px;
+      border-radius: 30px;
+      display: inline-block;
+    }
+
+    /* Стили для секций */
+    .section {
+      margin-bottom: 25px;
+      padding: 18px;
+      background: white;
+      border-radius: 18px;
+      border: 1px solid var(--gray-light);
+      text-align: left;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+
+    /* Группы управления */
+    .control-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: linear-gradient(to bottom right, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.9));
+      border-radius: 14px;
+      border: 1px solid var(--gray-light);
+      transition: all 0.3s ease;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: var(--dark);
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    .control-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--gray-light);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+    }
+
+    /* Кнопки */
+    .btn {
+      font-size: 1rem;
+      padding: 12px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-block;
+      min-width: 120px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-on {
+      background: linear-gradient(135deg, var(--success), #34d399);
+    }
+
+    .btn-off {
+      background: linear-gradient(135deg, var(--danger), #f87171);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+
+    /* Компактные контролы */
+    .compact-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .compact-controls .btn {
+      flex: 1;
+      min-width: 100px;
+    }
+
+    /* Кнопки режимов */
+    .mode-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .mode-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 120px;
+    }
+    
+    .mode-btn.global {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+    }
+    
+    .mode-btn.individual {
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: white;
+    }
+    
+    .mode-btn.active {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Вкладки зон */
+    .zone-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .zone-tab {
+      flex: 1;
+      padding: 8px 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: 8px 8px 0 0;
+      color: #a0aec0;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 13px;
+      min-width: 70px;
+      white-space: nowrap;
+    }
+    
+    .zone-tab.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      border-bottom: 2px solid #3b82f6;
+    }
+    
+    .zone-content {
+      display: none;
+    }
+    
+    .zone-content.active {
+      display: block;
+    }
+
+    /* Переключатель зоны */
+    .zone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gray-light);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .zone-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    
+    .zone-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(99, 102, 241, 0.05);
+      padding: 4px 10px;
+      border-radius: 30px;
+    }
+    
+    .zone-toggle label {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--gray);
+      cursor: pointer;
+    }
+    
+    .zone-toggle input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    /* Сетка дополнительных функций */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .feature-card {
+      background: white;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--gray-light);
+      transition: all 0.3s ease;
+    }
+    
+    .feature-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .feature-header input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+    
+    .feature-header label {
+      margin: 0;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* Слайдеры */
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 8px;
+      background: linear-gradient(to right, var(--gray-light), var(--primary));
+      outline: none;
+      -webkit-appearance: none;
+      margin: 12px 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 3px solid var(--primary);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Цветовой пикер */
+    input[type="color"] {
+      width: 100%;
+      height: 50px;
+      border: 3px solid var(--gray-light);
+      border-radius: 14px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .hsv-controls {
+      margin-top: 15px;
+      background: white;
+      padding: 15px;
+      border-radius: 14px;
+      border: 1px solid var(--gray-light);
+    }
+
+    .hsv-controls > div {
+      margin-bottom: 15px;
+    }
+
+    /* Шкала температуры */
+    .temperature-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--gray);
+      font-weight: 500;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .temperature-scale span {
+      text-align: center;
+      flex: 1;
+    }
+
+    /* Навигация */
+    .nav-container {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    .nav-container a {
+      color: var(--primary);
+      text-decoration: none;
+      display: inline-block;
+      padding: 10px 20px;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      background: white;
+      font-size: 0.95rem;
+    }
+
+    /* Стили для заблокированных элементов */
+    .control-group.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .control-group.disabled::after {
+      content: 'Управляется автояркостью';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 90%;
+    }
+
+    /* Медиа-запросы для мобильных устройств */
+    @media (max-width: 768px) {
+      body {
+        padding: 8px;
+      }
+
+      .container {
+        padding: 15px;
+        border-radius: 16px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+      }
+
+      h2 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+
+      .status-bar {
+        padding: 8px 12px;
+        gap: 10px;
+        border-radius: 30px;
+      }
+
+      .status-item {
+        font-size: 0.8rem;
+      }
+
+      .status-value {
+        padding: 2px 10px;
+        min-width: 50px;
+        font-size: 0.8rem;
+      }
+
+      .section {
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+
+      .control-group {
+        padding: 12px;
+        margin-bottom: 15px;
+      }
+
+      .control-group label {
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+      }
+
+      .control-group select {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+      }
+
+      .btn {
+        font-size: 0.95rem;
+        padding: 10px 15px;
+        min-width: 90px;
+      }
+
+      .compact-controls {
+        gap: 8px;
+      }
+
+      .compact-controls .btn {
+        min-width: 80px;
+      }
+
+      .mode-buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .mode-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .feature-card {
+        padding: 12px;
+      }
+
+      .feature-header {
+        margin-bottom: 8px;
+      }
+
+      .feature-header label {
+        font-size: 0.9rem;
+      }
+
+      .zone-tabs {
+        gap: 3px;
+      }
+
+      .zone-tab {
+        padding: 6px 3px;
+        font-size: 11px;
+        min-width: 50px;
+      }
+
+      .zone-header h3 {
+        font-size: 1rem;
+      }
+
+      .zone-toggle {
+        padding: 3px 8px;
+      }
+
+      .zone-toggle label {
+        font-size: 0.8rem;
+      }
+
+      input[type="range"] {
+        height: 6px;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+      }
+
+      input[type="color"] {
+        height: 45px;
+      }
+
+      .hsv-controls {
+        padding: 12px;
+      }
+
+      .temperature-scale {
+        font-size: 0.7rem;
+      }
+
+      .temperature-scale span {
+        text-align: center;
+      }
+
+      .nav-container a {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        width: 100%;
+      }
+
+      .control-group.disabled::after {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        white-space: normal;
+        text-align: center;
+        width: 90%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        gap: 5px;
+        align-items: stretch;
+      }
+
+      .status-item {
+        justify-content: center;
+      }
+
+      .compact-controls {
+        flex-direction: column;
+      }
+
+      .compact-controls .btn {
+        width: 100%;
+      }
+
+      .zone-tab {
+        font-size: 10px;
+        padding: 5px 2px;
+      }
+
+      .zone-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .zone-toggle {
+        align-self: flex-end;
+      }
+    }
   </style>
 
   <div class="container">
     <h1>RGB LED Контроллер</h1>
     
-    <!-- Статус подключения -->
-    <div class="status-section">
-      <p>Состояние: <span id="led-state" class="status-off">ВЫКЛ</span></p>
-      <p>Освещенность: <span id="ambient-light" class="ambient-value">Загрузка...</span></p>
+    <!-- Компактный статус-бар по центру -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-label">Состояние:</span>
+        <span id="led-state" class="status-value status-off">ВЫКЛ</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Освещенность:</span>
+        <span id="ambient-light" class="ambient-value">---</span>
+      </div>
     </div>
 
     <!-- Основные настройки -->
     <div class="section">
       <h2>Основные настройки</h2>
 
-      <!-- Включение/выключение -->
-      <div class="control-group control-buttons">
+      <!-- Включение/выключение компактно -->
+      <div class="compact-controls">
         <button class="btn btn-on" onclick="toggleLED(true)">Включить</button>
         <button class="btn btn-off" onclick="toggleLED(false)">Выключить</button>
       </div>
 
-      <!-- Режим работы -->
-      <div class="control-group">
-        <label>Режим работы:</label>
-        <select id="mode-select" onchange="changeMode()">
-          <option value="single">Одна зона</option>
-          <option value="split2">Две зоны</option>
-          <option value="split3">Три зоны</option>
-        </select>
+      <!-- Режим управления -->
+      <div class="control-group" style="margin-top: 20px;">
+        <label>Режим управления:</label>
+        <div class="mode-buttons">
+          <button id="mode-global" class="mode-btn global" onclick="setMode('global')">Общий режим</button>
+          <button id="mode-individual" class="mode-btn individual" onclick="setMode('individual')">Индивидуальный режим</button>
+        </div>
+      </div>
+
+      <!-- Дополнительные функции в виде сетки 3x1 -->
+      <div class="features-grid">
+        <!-- Автояркость -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <input type="checkbox" id="auto-brightness" onchange="toggleAutoBrightness()">
+            <label for="auto-brightness">Автояркость</label>
+          </div>
+          <div id="als-settings" style="display: none;">
+            <label for="aim-light-slider" style="font-size: 0.85rem;">Цель: <span id="aim-light-value">700</span></label>
+            <input type="range" id="aim-light-slider" min="0" max="2000" value="700" step="50"
+                  oninput="updateAimLight(this.value)">
+          </div>
+        </div>
+
+        <!-- Датчик движения -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <input type="checkbox" id="motion-sensor" onchange="toggleMotionSensor()">
+            <label for="motion-sensor">Движение</label>
+          </div>
+          <div id="motion-settings" style="display: none;">
+            <label for="motion-timeout" style="font-size: 0.85rem;">Таймаут: <span id="motion-timeout-value">60</span>с</label>
+            <input type="range" id="motion-timeout" min="10" max="300" value="60" step="10"
+                  oninput="updateMotionTimeout(this.value)">
+          </div>
+        </div>
+
+        <!-- Таймер -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <input type="checkbox" id="timer-enabled" onchange="toggleTimer()">
+            <label for="timer-enabled">Таймер</label>
+          </div>
+          <div id="timer-settings" style="display: none;">
+            <label for="timer-interval" style="font-size: 0.85rem;">Интервал: <span id="timer-interval-value">60</span>мин</label>
+            <input type="range" id="timer-interval" min="1" max="180" value="60" step="1"
+                  oninput="updateTimerInterval(this.value)">
+            <p class="timer-info" style="font-size: 0.8rem; margin-top: 5px;">Следующее: <span id="timer-next">--:--</span></p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Настройки для одной зоны -->
-    <div id="single-zone-section" class="section">
-      <h2>Настройки подсветки</h2>
+    <!-- Настройки для общего режима (одна зона) -->
+    <div id="global-mode-section" class="section">
+      <h2>Настройки подсветки (общий режим)</h2>
       
       <!-- Выбор эффекта -->
       <div class="control-group">
         <label for="effect-select">Эффект:</label>
-        <select id="effect-select" onchange="updateEffect()">
+        <select id="effect-select" onchange="updateGlobalEffect()">
           <option value="0">Статический цвет</option>
           <option value="1">Температура белого</option>
           <option value="2">Бегущая радуга</option>
@@ -106,46 +850,46 @@
       </div>
 
       <!-- Яркость (ручная) -->
-      <div class="control-group">
+      <div class="control-group" id="brightness-group">
         <label for="brightness-slider">Яркость: <span id="brightness-value">128</span></label>
         <input type="range" id="brightness-slider" min="0" max="255" value="128" 
-               oninput="updateBrightness(this.value)">
+               oninput="updateGlobalBrightness(this.value)">
       </div>
 
       <!-- Выбор цвета (HSV) -->
       <div class="control-group" id="color-picker-group">
         <label for="color-picker">Цвет (HSV):</label>
         <div class="color-picker-container">
-          <input type="color" id="color-picker" onchange="updateColor()">
+          <input type="color" id="color-picker" onchange="updateGlobalColor()">
           <div class="hsv-controls">
             <div>
               <label for="hue-slider">Оттенок (H): <span id="hue-value">0</span></label>
               <input type="range" id="hue-slider" min="0" max="360" value="0" 
-                     oninput="updateHSV('hue', this.value)">
+                     oninput="updateGlobalHSV('hue', this.value)">
             </div>
             <div>
               <label for="saturation-slider">Насыщенность (S): <span id="saturation-value">100</span>%</label>
               <input type="range" id="saturation-slider" min="0" max="100" value="100" 
-                     oninput="updateHSV('saturation', this.value)">
+                     oninput="updateGlobalHSV('saturation', this.value)">
             </div>
             <div>
               <label for="value-slider">Яркость (V): <span id="value-value">100</span>%</label>
               <input type="range" id="value-slider" min="0" max="100" value="100" 
-                     oninput="updateHSV('value', this.value)">
+                     oninput="updateGlobalHSV('value', this.value)">
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Температура белого (плавная) -->
+      <!-- Температура белого -->
       <div class="control-group" id="temperature-group">
-        <label for="temperature-slider">Цветовая температура: <span id="temperature-value">4000</span> K</label>
-        <input type="range" id="temperature-slider" min="2000" max="8000" value="4000" step="100"
-               oninput="updateTemperature(this.value)">
+        <label for="temperature-slider">Цветовая температура: <span id="temperature-value">6000</span> K</label>
+        <input type="range" id="temperature-slider" min="2000" max="10000" value="6000" step="100"
+               oninput="updateGlobalTemperature(this.value)">
         <div class="temperature-scale">
           <span>2000K (теплый)</span>
-          <span>4000K (нейтральный)</span>
-          <span>8000K (холодный)</span>
+          <span>6000K (нейтральный)</span>
+          <span>10000K (холодный)</span>
         </div>
       </div>
 
@@ -153,85 +897,279 @@
       <div class="control-group" id="speed-group">
         <label for="speed-slider">Скорость эффекта: <span id="speed-value">1</span></label>
         <input type="range" id="speed-slider" min="1" max="10" value="1" 
-               oninput="updateSpeed(this.value)">
+               oninput="updateGlobalSpeed(this.value)">
       </div>
     </div>
 
-    <!-- Настройки для зон -->
-    <div id="zones-section" class="section" style="display: none;">
-      <h2>Настройки зон</h2>
-      <div id="zones-container"></div>
-    </div>
-
-    <!-- Дополнительные функции -->
-    <div class="section">
-      <h2>Дополнительные функции</h2>
+    <!-- Настройки для индивидуального режима (3 зоны) -->
+    <div id="individual-mode-section" class="section" style="display: none;">
+      <h2>Настройки зон (индивидуальный режим)</h2>
       
-      <!-- Автояркость по датчику освещённости и целевая освещённость -->
-      <div class="control-group">
-        <label>
-          <input type="checkbox" id="auto-brightness" onchange="toggleAutoBrightness()">
-          Автоматическая регулировка яркости по датчику освещённости
-        </label>
-        <div id="aim-light-group" style="margin-top: 10px;">
-          <label for="aim-light-slider">Целевая освещённость: <span id="aim-light-value">700</span></label>
-          <input type="range" id="aim-light-slider" min="0" max="2000" value="700" step="50"
-                 oninput="updateAimLight(this.value)">
-          <p class="hint">Яркость ленты подстраивается под эту освещённость (0–2000).</p>
+      <!-- Вкладки для выбора зоны -->
+      <div class="zone-tabs">
+        <button class="zone-tab active" onclick="showZone(1)">Зона 1</button>
+        <button class="zone-tab" onclick="showZone(2)">Зона 2</button>
+        <button class="zone-tab" onclick="showZone(3)">Зона 3</button>
+      </div>
+      
+      <!-- Зона 1 -->
+      <div id="zone1-content" class="zone-content active">
+        <div class="zone-header">
+          <h3>Зона 1: За монитором</h3>
+          <div class="zone-toggle">
+            <label for="zone1-enabled">Вкл</label>
+            <input type="checkbox" id="zone1-enabled" checked onchange="toggleZone(1, this.checked)">
+          </div>
+        </div>
+        
+        <div class="control-group">
+          <label for="zone1-effect">Эффект:</label>
+          <select id="zone1-effect" onchange="updateZoneEffect(1)">
+            <option value="0">Статический цвет</option>
+            <option value="1">Температура белого</option>
+            <option value="2">Бегущая радуга</option>
+            <option value="3">Пульсация</option>
+            <option value="4">Мерцание</option>
+            <option value="5">Переливание фиолетового</option>
+          </select>
+        </div>
+
+        <div class="control-group" id="zone1-brightness-group">
+          <label for="zone1-brightness">Яркость: <span id="zone1-brightness-value">128</span></label>
+          <input type="range" id="zone1-brightness" min="0" max="255" value="128" 
+                 oninput="updateZoneBrightness(1, this.value)">
+        </div>
+
+        <div class="control-group" id="zone1-color-group">
+          <label for="zone1-color-picker">Цвет (HSV):</label>
+          <input type="color" id="zone1-color-picker" onchange="updateZoneColor(1)">
+          <div class="hsv-controls">
+            <div>
+              <label for="zone1-hue">Оттенок (H): <span id="zone1-hue-value">0</span></label>
+              <input type="range" id="zone1-hue" min="0" max="360" value="0" 
+                     oninput="updateZoneHSV(1, 'hue', this.value)">
+            </div>
+            <div>
+              <label for="zone1-saturation">Насыщенность (S): <span id="zone1-saturation-value">100</span>%</label>
+              <input type="range" id="zone1-saturation" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(1, 'saturation', this.value)">
+            </div>
+            <div>
+              <label for="zone1-value">Яркость (V): <span id="zone1-value-value">100</span>%</label>
+              <input type="range" id="zone1-value" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(1, 'value', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group" id="zone1-temperature-group">
+          <label for="zone1-temperature">Цветовая температура: <span id="zone1-temperature-value">6000</span> K</label>
+          <input type="range" id="zone1-temperature" min="2000" max="10000" value="6000" step="100"
+                 oninput="updateZoneTemperature(1, this.value)">
+        </div>
+
+        <div class="control-group" id="zone1-speed-group">
+          <label for="zone1-speed">Скорость: <span id="zone1-speed-value">1</span></label>
+          <input type="range" id="zone1-speed" min="1" max="10" value="1" 
+                 oninput="updateZoneSpeed(1, this.value)">
         </div>
       </div>
+      
+      <!-- Зона 2 -->
+      <div id="zone2-content" class="zone-content">
+        <div class="zone-header">
+          <h3>Зона 2: Поверхность стола</h3>
+          <div class="zone-toggle">
+            <label for="zone2-enabled">Вкл</label>
+            <input type="checkbox" id="zone2-enabled" checked onchange="toggleZone(2, this.checked)">
+          </div>
+        </div>
+        
+        <div class="control-group">
+          <label for="zone2-effect">Эффект:</label>
+          <select id="zone2-effect" onchange="updateZoneEffect(2)">
+            <option value="0">Статический цвет</option>
+            <option value="1">Температура белого</option>
+            <option value="2">Бегущая радуга</option>
+            <option value="3">Пульсация</option>
+            <option value="4">Мерцание</option>
+            <option value="5">Переливание фиолетового</option>
+          </select>
+        </div>
 
-      <!-- Автоматическое включение при движении -->
-      <div class="control-group">
-        <label>
-          <input type="checkbox" id="motion-sensor" onchange="toggleMotionSensor()">
-          Автоматическое включение при обнаружении движения
-        </label>
-        <div id="motion-settings" style="display: none; margin-top: 10px;">
-          <label for="motion-timeout">Таймаут отключения (сек): <span id="motion-timeout-value">60</span></label>
-          <input type="range" id="motion-timeout" min="10" max="300" value="60" step="10"
-                 oninput="updateMotionTimeout(this.value)">
+        <div class="control-group" id="zone2-brightness-group">
+          <label for="zone2-brightness">Яркость: <span id="zone2-brightness-value">128</span></label>
+          <input type="range" id="zone2-brightness" min="0" max="255" value="128" 
+                 oninput="updateZoneBrightness(2, this.value)">
+        </div>
+
+        <div class="control-group" id="zone2-color-group">
+          <label for="zone2-color-picker">Цвет (HSV):</label>
+          <input type="color" id="zone2-color-picker" onchange="updateZoneColor(2)">
+          <div class="hsv-controls">
+            <div>
+              <label for="zone2-hue">Оттенок (H): <span id="zone2-hue-value">0</span></label>
+              <input type="range" id="zone2-hue" min="0" max="360" value="0" 
+                     oninput="updateZoneHSV(2, 'hue', this.value)">
+            </div>
+            <div>
+              <label for="zone2-saturation">Насыщенность (S): <span id="zone2-saturation-value">100</span>%</label>
+              <input type="range" id="zone2-saturation" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(2, 'saturation', this.value)">
+            </div>
+            <div>
+              <label for="zone2-value">Яркость (V): <span id="zone2-value-value">100</span>%</label>
+              <input type="range" id="zone2-value" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(2, 'value', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group" id="zone2-temperature-group">
+          <label for="zone2-temperature">Цветовая температура: <span id="zone2-temperature-value">6000</span> K</label>
+          <input type="range" id="zone2-temperature" min="2000" max="10000" value="6000" step="100"
+                 oninput="updateZoneTemperature(2, this.value)">
+        </div>
+
+        <div class="control-group" id="zone2-speed-group">
+          <label for="zone2-speed">Скорость: <span id="zone2-speed-value">1</span></label>
+          <input type="range" id="zone2-speed" min="1" max="10" value="1" 
+                 oninput="updateZoneSpeed(2, this.value)">
         </div>
       </div>
+      
+      <!-- Зона 3 -->
+      <div id="zone3-content" class="zone-content">
+        <div class="zone-header">
+          <h3>Зона 3: Под столом</h3>
+          <div class="zone-toggle">
+            <label for="zone3-enabled">Вкл</label>
+            <input type="checkbox" id="zone3-enabled" checked onchange="toggleZone(3, this.checked)">
+          </div>
+        </div>
+        
+        <div class="control-group">
+          <label for="zone3-effect">Эффект:</label>
+          <select id="zone3-effect" onchange="updateZoneEffect(3)">
+            <option value="0">Статический цвет</option>
+            <option value="1">Температура белого</option>
+            <option value="2">Бегущая радуга</option>
+            <option value="3">Пульсация</option>
+            <option value="4">Мерцание</option>
+            <option value="5">Переливание фиолетового</option>
+          </select>
+        </div>
 
-      <!-- Таймер -->
-      <div class="control-group">
-        <label>
-          <input type="checkbox" id="timer-enabled" onchange="toggleTimer()">
-          Включить таймер напоминаний
-        </label>
-        <div id="timer-settings" style="display: none; margin-top: 10px;">
-          <label for="timer-interval">Интервал напоминаний (мин): <span id="timer-interval-value">60</span></label>
-          <input type="range" id="timer-interval" min="1" max="180" value="60" step="1"
-                 oninput="updateTimerInterval(this.value)">
-          <p class="timer-info">Следующее напоминание: <span id="timer-next">--:--</span></p>
+        <div class="control-group" id="zone3-brightness-group">
+          <label for="zone3-brightness">Яркость: <span id="zone3-brightness-value">128</span></label>
+          <input type="range" id="zone3-brightness" min="0" max="255" value="128" 
+                 oninput="updateZoneBrightness(3, this.value)">
+        </div>
+
+        <div class="control-group" id="zone3-color-group">
+          <label for="zone3-color-picker">Цвет (HSV):</label>
+          <input type="color" id="zone3-color-picker" onchange="updateZoneColor(3)">
+          <div class="hsv-controls">
+            <div>
+              <label for="zone3-hue">Оттенок (H): <span id="zone3-hue-value">0</span></label>
+              <input type="range" id="zone3-hue" min="0" max="360" value="0" 
+                     oninput="updateZoneHSV(3, 'hue', this.value)">
+            </div>
+            <div>
+              <label for="zone3-saturation">Насыщенность (S): <span id="zone3-saturation-value">100</span>%</label>
+              <input type="range" id="zone3-saturation" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(3, 'saturation', this.value)">
+            </div>
+            <div>
+              <label for="zone3-value">Яркость (V): <span id="zone3-value-value">100</span>%</label>
+              <input type="range" id="zone3-value" min="0" max="100" value="100" 
+                     oninput="updateZoneHSV(3, 'value', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group" id="zone3-temperature-group">
+          <label for="zone3-temperature">Цветовая температура: <span id="zone3-temperature-value">6000</span> K</label>
+          <input type="range" id="zone3-temperature" min="2000" max="10000" value="6000" step="100"
+                 oninput="updateZoneTemperature(3, this.value)">
+        </div>
+
+        <div class="control-group" id="zone3-speed-group">
+          <label for="zone3-speed">Скорость: <span id="zone3-speed-value">1</span></label>
+          <input type="range" id="zone3-speed" min="1" max="10" value="1" 
+                 oninput="updateZoneSpeed(3, this.value)">
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="nav-container">
-    <a href="/wifi-config">Настройки Wi-Fi</a>
+    <!-- Навигация -->
+    <div class="nav-container">
+      <a href="/wifi-config">Настройки Wi-Fi</a>
+    </div>
   </div>
 
   <script>
     // Глобальные переменные состояния
-    let currentMode = 'single';
+    let currentMode = 'global';
     let autoBrightness = false;
     let motionSensorEnabled = false;
     let timerEnabled = false;
     let currentHSV = { h: 0, s: 100, v: 100 };
     let zoneSettings = {
-      zone1: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 4000 },
-      zone2: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 4000 },
-      zone3: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 4000 }
+      zone1: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, hue: 0, s: 100, v: 100, enabled: true },
+      zone2: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, hue: 0, s: 100, v: 100, enabled: true },
+      zone3: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, hue: 0, s: 100, v: 100, enabled: true }
     };
+    let activeZone = 1;
+
+    // Функция для обновления состояния ползунков яркости в общем режиме
+    function updateBrightnessSlidersState() {
+      const brightnessSlider = document.getElementById('brightness-slider');
+      const brightnessGroup = document.getElementById('brightness-group');
+      
+      if (autoBrightness) {
+        if (brightnessGroup) brightnessGroup.classList.add('disabled');
+        if (brightnessSlider) brightnessSlider.disabled = true;
+      } else {
+        if (brightnessGroup) brightnessGroup.classList.remove('disabled');
+        if (brightnessSlider) brightnessSlider.disabled = false;
+      }
+    }
+
+    // Функция для обновления состояния ползунков яркости в зонах
+    function updateZoneBrightnessSlidersState() {
+      for (let i = 1; i <= 3; i++) {
+        const zoneSlider = document.getElementById(`zone${i}-brightness`);
+        const zoneGroup = document.getElementById(`zone${i}-brightness-group`);
+        
+        if (autoBrightness) {
+          if (zoneGroup) zoneGroup.classList.add('disabled');
+          if (zoneSlider) zoneSlider.disabled = true;
+        } else {
+          if (zoneGroup) zoneGroup.classList.remove('disabled');
+          if (zoneSlider) zoneSlider.disabled = false;
+        }
+      }
+    }
+
+    // Функция для обновления color-picker из текущих HSV
+    function updateColorPickerFromHSV() {
+      const colorPicker = document.getElementById('color-picker');
+      if (colorPicker) {
+        const rgb = hsvToRgb(currentHSV.h, currentHSV.s, currentHSV.v);
+        const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+        colorPicker.value = hex;
+      }
+    }
 
     // Инициализация при загрузке
     window.onload = function() {
       fetchLightData();
       setInterval(fetchLightData, 1000);
       loadSettings();
+      updateBrightnessSlidersState();
+      updateZoneBrightnessSlidersState();
+      updateColorPickerFromHSV();
     };
 
     // Загрузка данных освещенности
@@ -240,20 +1178,10 @@
         .then(response => response.json())
         .then(data => {
           document.getElementById('ambient-light').textContent = data.ambient_light;
-          // Яркость при ALS регулируется на устройстве, не перезаписываем с клиента
         })
         .catch(error => {
           console.log('Error fetching light data:', error);
         });
-    }
-
-    // Вычисление автоматической яркости на основе освещенности
-    function calculateAutoBrightness(ambientLight) {
-      // Инвертируем: чем темнее, тем ярче подсветка
-      // Диапазон освещенности: 0-65535 (16-bit)
-      const maxLight = 65535;
-      const brightness = Math.round(255 * (1 - ambientLight / maxLight));
-      return Math.max(0, Math.min(255, brightness));
     }
 
     // Включение/выключение LED
@@ -265,10 +1193,10 @@
           const stateElement = document.getElementById('led-state');
           if (state) {
             stateElement.textContent = 'ВКЛ';
-            stateElement.className = 'status-on';
+            stateElement.className = 'status-value status-on';
           } else {
             stateElement.textContent = 'ВЫКЛ';
-            stateElement.className = 'status-off';
+            stateElement.className = 'status-value status-off';
           }
         })
         .catch(error => {
@@ -276,138 +1204,73 @@
         });
     }
 
-    // Изменение режима работы
-    function changeMode() {
-      const mode = document.getElementById('mode-select').value;
+    // Включение/выключение конкретной зоны
+    function toggleZone(zoneNum, enabled) {
+      zoneSettings[`zone${zoneNum}`].enabled = enabled;
+      sendZoneEffectSettings(zoneNum);
+      console.log(`Zone ${zoneNum} ${enabled ? 'enabled' : 'disabled'}`);
+    }
+
+    // Установка режима работы (общий/индивидуальный)
+    function setMode(mode) {
       currentMode = mode;
       
-      const singleSection = document.getElementById('single-zone-section');
-      const zonesSection = document.getElementById('zones-section');
+      document.getElementById('mode-global').classList.remove('active');
+      document.getElementById('mode-individual').classList.remove('active');
+      document.getElementById('mode-' + mode).classList.add('active');
       
-      if (mode === 'single') {
-        singleSection.style.display = 'block';
-        zonesSection.style.display = 'none';
-        sendEffectSettings();
+      const globalSection = document.getElementById('global-mode-section');
+      const individualSection = document.getElementById('individual-mode-section');
+      
+      if (mode === 'global') {
+        globalSection.style.display = 'block';
+        individualSection.style.display = 'none';
       } else {
-        singleSection.style.display = 'none';
-        zonesSection.style.display = 'block';
-        renderZonesSettings(mode === 'split3' ? 3 : 2);
-        sendZonesSettings();
+        globalSection.style.display = 'none';
+        individualSection.style.display = 'block';
       }
+      
+      const params = new URLSearchParams({ mode: mode });
+      fetch('/setmode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error setting mode:', error));
     }
 
-    // Отрисовка настроек зон
-    function renderZonesSettings(numZones) {
-      const container = document.getElementById('zones-container');
-      container.innerHTML = '';
+    function showZone(zoneNum) {
+      activeZone = zoneNum;
       
-      const zoneNames = ['За монитором', 'Поверхность стола', 'Под столом'];
+      document.querySelectorAll('.zone-tab').forEach((tab, index) => {
+        if (index + 1 === zoneNum) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
       
-      for (let i = 1; i <= numZones; i++) {
-        const zoneDiv = document.createElement('div');
-        zoneDiv.className = 'zone-settings';
-        zoneDiv.innerHTML = `
-          <h3>Зона ${i}: ${zoneNames[i-1]}</h3>
-          
-          <div class="control-group">
-            <label>Эффект:</label>
-            <select id="zone${i}-effect" onchange="updateZoneEffect(${i})">
-              <option value="0">Статический цвет</option>
-              <option value="1">Температура белого</option>
-              <option value="2">Бегущая радуга</option>
-              <option value="3">Пульсация</option>
-              <option value="4">Мерцание</option>
-              <option value="5">Переливание фиолетового</option>
-            </select>
-          </div>
-
-          <div class="control-group">
-            <label>Яркость: <span id="zone${i}-brightness-value">128</span></label>
-            <input type="range" id="zone${i}-brightness" min="0" max="255" value="128" 
-                   oninput="updateZoneBrightness(${i}, this.value)">
-          </div>
-
-          <div class="control-group" id="zone${i}-color-group">
-            <label>Цвет (HSV):</label>
-            <input type="color" id="zone${i}-color-picker" onchange="updateZoneColor(${i})">
-            <div class="hsv-controls">
-              <div>
-                <label>Оттенок (H): <span id="zone${i}-hue-value">0</span></label>
-                <input type="range" id="zone${i}-hue" min="0" max="360" value="0" 
-                       oninput="updateZoneHSV(${i}, 'hue', this.value)">
-              </div>
-            </div>
-          </div>
-
-          <div class="control-group" id="zone${i}-temperature-group">
-            <label>Цветовая температура: <span id="zone${i}-temperature-value">4000</span> K</label>
-            <input type="range" id="zone${i}-temperature" min="2000" max="8000" value="4000" step="100"
-                   oninput="updateZoneTemperature(${i}, this.value)">
-          </div>
-
-          <div class="control-group" id="zone${i}-speed-group">
-            <label>Скорость: <span id="zone${i}-speed-value">1</span></label>
-            <input type="range" id="zone${i}-speed" min="1" max="10" value="1" 
-                   oninput="updateZoneSpeed(${i}, this.value)">
-          </div>
-        `;
-        container.appendChild(zoneDiv);
-        
-        // Загружаем сохраненные значения
-        const settings = zoneSettings[`zone${i}`];
-        document.getElementById(`zone${i}-effect`).value = settings.effect;
-        document.getElementById(`zone${i}-brightness`).value = settings.brightness;
-        document.getElementById(`zone${i}-brightness-value`).textContent = settings.brightness;
-        document.getElementById(`zone${i}-temperature`).value = settings.temp;
-        document.getElementById(`zone${i}-temperature-value`).textContent = settings.temp;
-        document.getElementById(`zone${i}-speed`).value = settings.speed;
-        document.getElementById(`zone${i}-speed-value`).textContent = settings.speed;
-        
-        // Показываем/скрываем группы в зависимости от эффекта
-        updateZoneEffectVisibility(i);
-      }
+      document.querySelectorAll('.zone-content').forEach((content, index) => {
+        if (index + 1 === zoneNum) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+      
+      updateZoneEffectVisibility(zoneNum);
     }
 
-    // Обновление эффекта
-    function updateEffect() {
+    function updateGlobalEffect() {
       const effect = parseInt(document.getElementById('effect-select').value);
-      updateEffectVisibility();
-      sendEffectSettings();
+      updateGlobalEffectVisibility();
+      sendGlobalEffectSettings();
     }
 
-    // Обновление видимости элементов в зависимости от эффекта
-    function updateEffectVisibility() {
+    function updateGlobalEffectVisibility() {
       const effect = parseInt(document.getElementById('effect-select').value);
       const colorGroup = document.getElementById('color-picker-group');
       const tempGroup = document.getElementById('temperature-group');
       const speedGroup = document.getElementById('speed-group');
-      
-      // Статический цвет - нужен цвет
-      if (effect === 0) {
-        colorGroup.style.display = 'block';
-        tempGroup.style.display = 'none';
-        speedGroup.style.display = 'none';
-      }
-      // Температура белого - нужна температура
-      else if (effect === 1) {
-        colorGroup.style.display = 'none';
-        tempGroup.style.display = 'block';
-        speedGroup.style.display = 'none';
-      }
-      // Динамические эффекты - нужна скорость
-      else if (effect >= 2 && effect <= 5) {
-        colorGroup.style.display = 'none';
-        tempGroup.style.display = 'none';
-        speedGroup.style.display = 'block';
-      }
-    }
-
-    // Обновление видимости элементов для зоны
-    function updateZoneEffectVisibility(zoneNum) {
-      const effect = parseInt(document.getElementById(`zone${zoneNum}-effect`).value);
-      const colorGroup = document.getElementById(`zone${zoneNum}-color-group`);
-      const tempGroup = document.getElementById(`zone${zoneNum}-temperature-group`);
-      const speedGroup = document.getElementById(`zone${zoneNum}-speed-group`);
       
       if (effect === 0) {
         colorGroup.style.display = 'block';
@@ -424,16 +1287,14 @@
       }
     }
 
-    // Обновление яркости
-    function updateBrightness(value, silent = false) {
+    function updateGlobalBrightness(value, silent = false) {
       document.getElementById('brightness-value').textContent = value;
-      if (!silent) {
-        sendEffectSettings();
+      if (!silent && !autoBrightness) {
+        sendGlobalEffectSettings();
       }
     }
 
-    // Обновление цвета
-    function updateColor() {
+    function updateGlobalColor() {
       const colorPicker = document.getElementById('color-picker');
       const rgb = hexToRgb(colorPicker.value);
       const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
@@ -446,11 +1307,10 @@
       document.getElementById('value-slider').value = hsv.v;
       document.getElementById('value-value').textContent = hsv.v;
       
-      sendEffectSettings();
+      sendGlobalEffectSettings();
     }
 
-    // Обновление HSV
-    function updateHSV(component, value) {
+    function updateGlobalHSV(component, value) {
       if (component === 'hue') {
         currentHSV.h = parseInt(value);
         document.getElementById('hue-value').textContent = value;
@@ -462,138 +1322,33 @@
         document.getElementById('value-value').textContent = value;
       }
       
-      // Обновляем color picker
       const rgb = hsvToRgb(currentHSV.h, currentHSV.s, currentHSV.v);
       document.getElementById('color-picker').value = rgbToHex(rgb.r, rgb.g, rgb.b);
       
-      sendEffectSettings();
+      sendGlobalEffectSettings();
     }
 
-    // Обновление температуры
-    function updateTemperature(value) {
+    function updateGlobalTemperature(value) {
       document.getElementById('temperature-value').textContent = value;
-      sendEffectSettings();
+      sendGlobalEffectSettings();
     }
 
-    // Обновление скорости
-    function updateSpeed(value) {
+    function updateGlobalSpeed(value) {
       document.getElementById('speed-value').textContent = value;
-      sendEffectSettings();
+      sendGlobalEffectSettings();
     }
 
-    // Обновление эффекта зоны
-    function updateZoneEffect(zoneNum) {
-      const effect = parseInt(document.getElementById(`zone${zoneNum}-effect`).value);
-      zoneSettings[`zone${zoneNum}`].effect = effect;
-      updateZoneEffectVisibility(zoneNum);
-      sendZonesSettings();
-    }
-
-    // Обновление яркости зоны
-    function updateZoneBrightness(zoneNum, value) {
-      document.getElementById(`zone${zoneNum}-brightness-value`).textContent = value;
-      zoneSettings[`zone${zoneNum}`].brightness = parseInt(value);
-      sendZonesSettings();
-    }
-
-    // Обновление цвета зоны
-    function updateZoneColor(zoneNum) {
-      const colorPicker = document.getElementById(`zone${zoneNum}-color-picker`);
-      const rgb = hexToRgb(colorPicker.value);
-      const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
-      zoneSettings[`zone${zoneNum}`].color = Math.round(hsv.h * 255 / 360);
-      sendZonesSettings();
-    }
-
-    // Обновление HSV зоны
-    function updateZoneHSV(zoneNum, component, value) {
-      if (component === 'hue') {
-        document.getElementById(`zone${zoneNum}-hue-value`).textContent = value;
-        zoneSettings[`zone${zoneNum}`].color = Math.round(value * 255 / 360);
-        sendZonesSettings();
-      }
-    }
-
-    // Обновление температуры зоны
-    function updateZoneTemperature(zoneNum, value) {
-      document.getElementById(`zone${zoneNum}-temperature-value`).textContent = value;
-      zoneSettings[`zone${zoneNum}`].temp = parseInt(value);
-      sendZonesSettings();
-    }
-
-    // Обновление скорости зоны
-    function updateZoneSpeed(zoneNum, value) {
-      document.getElementById(`zone${zoneNum}-speed-value`).textContent = value;
-      zoneSettings[`zone${zoneNum}`].speed = parseInt(value);
-      sendZonesSettings();
-    }
-
-    // Переключение автоматической яркости (ALS)
-    function toggleAutoBrightness() {
-      autoBrightness = document.getElementById('auto-brightness').checked;
-      sendALSSettings();
-    }
-
-    function updateAimLight(value) {
-      document.getElementById('aim-light-value').textContent = value;
-      sendALSSettings();
-    }
-
-    // Переключение датчика движения
-    function toggleMotionSensor() {
-      motionSensorEnabled = document.getElementById('motion-sensor').checked;
-      const settings = document.getElementById('motion-settings');
-      settings.style.display = motionSensorEnabled ? 'block' : 'none';
-      sendMotionSettings();
-    }
-
-    // Обновление таймаута движения
-    function updateMotionTimeout(value) {
-      document.getElementById('motion-timeout-value').textContent = value;
-      sendMotionSettings();
-    }
-
-    // Переключение таймера
-    function toggleTimer() {
-      timerEnabled = document.getElementById('timer-enabled').checked;
-      const settings = document.getElementById('timer-settings');
-      settings.style.display = timerEnabled ? 'block' : 'none';
-      if (timerEnabled) {
-        startTimer();
-      }
-      sendTimerSettings();
-    }
-
-    // Обновление интервала таймера
-    function updateTimerInterval(value) {
-      document.getElementById('timer-interval-value').textContent = value;
-      if (timerEnabled) {
-        startTimer();
-      }
-      sendTimerSettings();
-    }
-
-    // Запуск таймера
-    function startTimer() {
-      const interval = parseInt(document.getElementById('timer-interval').value);
-      const nextTime = new Date(Date.now() + interval * 60000);
-      document.getElementById('timer-next').textContent = 
-        nextTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    // Отправка настроек эффекта
-    function sendEffectSettings() {
+    function sendGlobalEffectSettings() {
       const effect = parseInt(document.getElementById('effect-select').value);
       const brightness = parseInt(document.getElementById('brightness-slider').value);
       const speed = parseInt(document.getElementById('speed-slider').value);
       const hue = currentHSV.h;
       const color = Math.round(hue * 255 / 360);
       const temp = parseInt(document.getElementById('temperature-slider').value);
-      // S и V в интерфейсе 0–100, на бэкенд отправляем 0–255
       const sat = Math.round(currentHSV.s * 255 / 100);
       const hsvval = Math.round(currentHSV.v * 255 / 100);
       
-      const tempNormalized = Math.round(((temp - 2000) / 6000) * 255);
+      const tempNormalized = Math.round(((temp - 2000) / 8000) * 255);
       
       const params = new URLSearchParams({
         effect: effect,
@@ -605,7 +1360,6 @@
         hsvval: hsvval
       });
       
-      // Параметры в теле POST — иначе sat/hsvval могут не доходить до сервера
       fetch('/seteffect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -613,28 +1367,200 @@
       }).catch(error => console.error('Error sending effect settings:', error));
     }
 
-    // Отправка настроек зон
-    function sendZonesSettings() {
-      const numZones = currentMode === 'split3' ? 3 : 2;
-      const params = new URLSearchParams({
-        numSplit: numZones
-      });
-      
-      for (let i = 1; i <= numZones; i++) {
-        const settings = zoneSettings[`zone${i}`];
-        const tempNormalized = Math.round(((settings.temp - 2000) / 6000) * 255);
-        params.append(`effect${i}`, settings.effect);
-        params.append(`val${i}`, settings.brightness);
-        params.append(`speed${i}`, settings.speed);
-        params.append(`color${i}`, settings.color);
-        params.append(`temp${i}`, tempNormalized);
-      }
-      
-      fetch('/setsplitting?' + params.toString(), { method: 'POST' })
-        .catch(error => console.error('Error sending zones settings:', error));
+    function updateZoneEffect(zoneNum) {
+      const effect = parseInt(document.getElementById(`zone${zoneNum}-effect`).value);
+      zoneSettings[`zone${zoneNum}`].effect = effect;
+      updateZoneEffectVisibility(zoneNum);
+      sendZoneEffectSettings(zoneNum);
     }
 
-    // Отправка настроек движения
+    function updateZoneEffectVisibility(zoneNum) {
+      const effect = parseInt(document.getElementById(`zone${zoneNum}-effect`).value);
+      const colorGroup = document.getElementById(`zone${zoneNum}-color-group`);
+      const tempGroup = document.getElementById(`zone${zoneNum}-temperature-group`);
+      const speedGroup = document.getElementById(`zone${zoneNum}-speed-group`);
+      
+      if (colorGroup) {
+        if (effect === 0) {
+          colorGroup.style.display = 'block';
+          if (tempGroup) tempGroup.style.display = 'none';
+          if (speedGroup) speedGroup.style.display = 'none';
+        } else if (effect === 1) {
+          colorGroup.style.display = 'none';
+          if (tempGroup) tempGroup.style.display = 'block';
+          if (speedGroup) speedGroup.style.display = 'none';
+        } else if (effect >= 2 && effect <= 5) {
+          colorGroup.style.display = 'none';
+          if (tempGroup) tempGroup.style.display = 'none';
+          if (speedGroup) speedGroup.style.display = 'block';
+        }
+      }
+    }
+
+    function updateZoneBrightness(zoneNum, value) {
+      document.getElementById(`zone${zoneNum}-brightness-value`).textContent = value;
+      zoneSettings[`zone${zoneNum}`].brightness = parseInt(value);
+      if (!autoBrightness) {
+        sendZoneEffectSettings(zoneNum);
+      }
+    }
+
+    function updateZoneColor(zoneNum) {
+      const colorPicker = document.getElementById(`zone${zoneNum}-color-picker`);
+      const rgb = hexToRgb(colorPicker.value);
+      const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+      
+      zoneSettings[`zone${zoneNum}`].hue = hsv.h;
+      zoneSettings[`zone${zoneNum}`].s = hsv.s;
+      zoneSettings[`zone${zoneNum}`].v = hsv.v;
+      
+      document.getElementById(`zone${zoneNum}-hue-value`).textContent = hsv.h;
+      document.getElementById(`zone${zoneNum}-hue`).value = hsv.h;
+      document.getElementById(`zone${zoneNum}-saturation-value`).textContent = hsv.s;
+      document.getElementById(`zone${zoneNum}-saturation`).value = hsv.s;
+      document.getElementById(`zone${zoneNum}-value-value`).textContent = hsv.v;
+      document.getElementById(`zone${zoneNum}-value`).value = hsv.v;
+      
+      sendZoneEffectSettings(zoneNum);
+    }
+
+    function updateZoneHSV(zoneNum, component, value) {
+      if (component === 'hue') {
+        document.getElementById(`zone${zoneNum}-hue-value`).textContent = value;
+        zoneSettings[`zone${zoneNum}`].hue = parseInt(value);
+        
+        const zoneColorPicker = document.getElementById(`zone${zoneNum}-color-picker`);
+        if (zoneColorPicker) {
+          const s = zoneSettings[`zone${zoneNum}`].s;
+          const v = zoneSettings[`zone${zoneNum}`].v;
+          const rgb = hsvToRgb(parseInt(value), s, v);
+          zoneColorPicker.value = rgbToHex(rgb.r, rgb.g, rgb.b);
+        }
+      } else if (component === 'saturation') {
+        document.getElementById(`zone${zoneNum}-saturation-value`).textContent = value;
+        zoneSettings[`zone${zoneNum}`].s = parseInt(value);
+        
+        const zoneColorPicker = document.getElementById(`zone${zoneNum}-color-picker`);
+        if (zoneColorPicker) {
+          const h = zoneSettings[`zone${zoneNum}`].hue;
+          const v = zoneSettings[`zone${zoneNum}`].v;
+          const rgb = hsvToRgb(h, parseInt(value), v);
+          zoneColorPicker.value = rgbToHex(rgb.r, rgb.g, rgb.b);
+        }
+      } else if (component === 'value') {
+        document.getElementById(`zone${zoneNum}-value-value`).textContent = value;
+        zoneSettings[`zone${zoneNum}`].v = parseInt(value);
+        
+        const zoneColorPicker = document.getElementById(`zone${zoneNum}-color-picker`);
+        if (zoneColorPicker) {
+          const h = zoneSettings[`zone${zoneNum}`].hue;
+          const s = zoneSettings[`zone${zoneNum}`].s;
+          const rgb = hsvToRgb(h, s, parseInt(value));
+          zoneColorPicker.value = rgbToHex(rgb.r, rgb.g, rgb.b);
+        }
+      }
+      
+      sendZoneEffectSettings(zoneNum);
+    }
+
+    function updateZoneTemperature(zoneNum, value) {
+      document.getElementById(`zone${zoneNum}-temperature-value`).textContent = value;
+      zoneSettings[`zone${zoneNum}`].temp = parseInt(value);
+      sendZoneEffectSettings(zoneNum);
+    }
+
+    function updateZoneSpeed(zoneNum, value) {
+      document.getElementById(`zone${zoneNum}-speed-value`).textContent = value;
+      zoneSettings[`zone${zoneNum}`].speed = parseInt(value);
+      sendZoneEffectSettings(zoneNum);
+    }
+
+    function sendZoneEffectSettings(zoneNum) {
+      const settings = zoneSettings[`zone${zoneNum}`];
+      const effect = settings.effect;
+      const brightness = settings.brightness;
+      const speed = settings.speed;
+      const hue = settings.hue || 0;
+      const color = Math.round(hue * 255 / 360);
+      const sat = Math.round(settings.s * 255 / 100);
+      const hsvval = Math.round(settings.v * 255 / 100);
+      const temp = settings.temp;
+      const enabled = settings.enabled ? 1 : 0;
+      
+      const tempNormalized = Math.round(((temp - 2000) / 8000) * 255);
+      
+      const params = new URLSearchParams({
+        zone: zoneNum,
+        effect: effect,
+        val: brightness,
+        speed: speed,
+        color: color,
+        temp: tempNormalized,
+        sat: sat,
+        hsvval: hsvval,
+        enabled: enabled
+      });
+      
+      fetch('/setzoneeffect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error sending zone effect settings:', error));
+    }
+
+    function toggleAutoBrightness() {
+      autoBrightness = document.getElementById('auto-brightness').checked;
+      const settings = document.getElementById('als-settings');
+      settings.style.display = autoBrightness ? 'block' : 'none';
+      
+      updateBrightnessSlidersState();
+      updateZoneBrightnessSlidersState();
+      
+      sendALSSettings();
+    }
+
+    function updateAimLight(value) {
+      document.getElementById('aim-light-value').textContent = value;
+      sendALSSettings();
+    }
+
+    function toggleMotionSensor() {
+      motionSensorEnabled = document.getElementById('motion-sensor').checked;
+      const settings = document.getElementById('motion-settings');
+      settings.style.display = motionSensorEnabled ? 'block' : 'none';
+      sendMotionSettings();
+    }
+
+    function updateMotionTimeout(value) {
+      document.getElementById('motion-timeout-value').textContent = value;
+      sendMotionSettings();
+    }
+
+    function toggleTimer() {
+      timerEnabled = document.getElementById('timer-enabled').checked;
+      const settings = document.getElementById('timer-settings');
+      settings.style.display = timerEnabled ? 'block' : 'none';
+      if (timerEnabled) {
+        startTimer();
+      }
+      sendTimerSettings();
+    }
+
+    function updateTimerInterval(value) {
+      document.getElementById('timer-interval-value').textContent = value;
+      if (timerEnabled) {
+        startTimer();
+      }
+      sendTimerSettings();
+    }
+
+    function startTimer() {
+      const interval = parseInt(document.getElementById('timer-interval').value);
+      const nextTime = new Date(Date.now() + interval * 60000);
+      document.getElementById('timer-next').textContent = 
+        nextTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
     function sendMotionSettings() {
       const timeout = parseInt(document.getElementById('motion-timeout').value);
       const params = new URLSearchParams({
@@ -648,7 +1574,6 @@
       }).catch(error => console.error('Error sending motion settings:', error));
     }
 
-    // Отправка настроек автояркости (ALS)
     function sendALSSettings() {
       const aimLight = parseInt(document.getElementById('aim-light-slider').value);
       const params = new URLSearchParams({
@@ -664,7 +1589,6 @@
       }).catch(error => console.error('Error sending ALS settings:', error));
     }
 
-    // Отправка настроек таймера
     function sendTimerSettings() {
       const interval = parseInt(document.getElementById('timer-interval').value);
       const params = new URLSearchParams({
@@ -672,20 +1596,29 @@
         interval: interval
       });
       
-      fetch('/settimer?' + params.toString(), { method: 'POST' })
-        .catch(error => console.error('Error sending timer settings:', error));
+      fetch('/settimer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      }).catch(error => console.error('Error sending timer settings:', error));
     }
 
-    // Загрузка сохраненных настроек
     function loadSettings() {
       fetch('/getsettings')
         .then(response => response.json())
         .then(data => {
           if (data.mode) {
-            document.getElementById('mode-select').value = data.mode;
-            changeMode();
+            setMode(data.mode);
           }
-          if (data.mode === 'single' && data.saturation !== undefined && data.hsvval !== undefined) {
+          
+          if (data.effect !== undefined) {
+            document.getElementById('effect-select').value = data.effect;
+          }
+          if (data.brightness !== undefined) {
+            document.getElementById('brightness-slider').value = data.brightness;
+            document.getElementById('brightness-value').textContent = data.brightness;
+          }
+          if (data.saturation !== undefined && data.hsvval !== undefined) {
             const s = Math.round(data.saturation * 100 / 255);
             const v = Math.round(data.hsvval * 100 / 255);
             currentHSV.s = s;
@@ -698,7 +1631,78 @@
               document.getElementById('value-slider').value = v;
               document.getElementById('value-value').textContent = v;
             }
+            updateColorPickerFromHSV();
           }
+          
+          for (let i = 1; i <= 3; i++) {
+            const zoneData = data[`zone${i}`];
+            if (zoneData) {
+              zoneSettings[`zone${i}`].effect = zoneData.effect || 0;
+              zoneSettings[`zone${i}`].brightness = zoneData.brightness || 128;
+              zoneSettings[`zone${i}`].speed = zoneData.speed || 1;
+              zoneSettings[`zone${i}`].color = zoneData.color || 0;
+              zoneSettings[`zone${i}`].temp = zoneData.temp || 6000;
+              zoneSettings[`zone${i}`].enabled = zoneData.enabled !== undefined ? zoneData.enabled : true;
+              
+              if (zoneData.saturation !== undefined) {
+                zoneSettings[`zone${i}`].s = Math.round(zoneData.saturation * 100 / 255);
+              }
+              if (zoneData.hsvval !== undefined) {
+                zoneSettings[`zone${i}`].v = Math.round(zoneData.hsvval * 100 / 255);
+              }
+              
+              const effectEl = document.getElementById(`zone${i}-effect`);
+              if (effectEl) effectEl.value = zoneSettings[`zone${i}`].effect;
+              
+              const brightnessEl = document.getElementById(`zone${i}-brightness`);
+              if (brightnessEl) {
+                brightnessEl.value = zoneSettings[`zone${i}`].brightness;
+                document.getElementById(`zone${i}-brightness-value`).textContent = zoneSettings[`zone${i}`].brightness;
+              }
+              
+              const tempEl = document.getElementById(`zone${i}-temperature`);
+              if (tempEl) {
+                tempEl.value = zoneSettings[`zone${i}`].temp;
+                document.getElementById(`zone${i}-temperature-value`).textContent = zoneSettings[`zone${i}`].temp;
+              }
+              
+              const speedEl = document.getElementById(`zone${i}-speed`);
+              if (speedEl) {
+                speedEl.value = zoneSettings[`zone${i}`].speed;
+                document.getElementById(`zone${i}-speed-value`).textContent = zoneSettings[`zone${i}`].speed;
+              }
+              
+              const hueEl = document.getElementById(`zone${i}-hue`);
+              if (hueEl) {
+                hueEl.value = zoneSettings[`zone${i}`].hue;
+                document.getElementById(`zone${i}-hue-value`).textContent = zoneSettings[`zone${i}`].hue;
+              }
+              
+              const satEl = document.getElementById(`zone${i}-saturation`);
+              if (satEl) {
+                satEl.value = zoneSettings[`zone${i}`].s;
+                document.getElementById(`zone${i}-saturation-value`).textContent = zoneSettings[`zone${i}`].s;
+              }
+              
+              const valEl = document.getElementById(`zone${i}-value`);
+              if (valEl) {
+                valEl.value = zoneSettings[`zone${i}`].v;
+                document.getElementById(`zone${i}-value-value`).textContent = zoneSettings[`zone${i}`].v;
+              }
+              
+              const enabledEl = document.getElementById(`zone${i}-enabled`);
+              if (enabledEl) enabledEl.checked = zoneSettings[`zone${i}`].enabled;
+              
+              const zoneColorPicker = document.getElementById(`zone${i}-color-picker`);
+              if (zoneColorPicker) {
+                const rgb = hsvToRgb(zoneSettings[`zone${i}`].hue, zoneSettings[`zone${i}`].s, zoneSettings[`zone${i}`].v);
+                zoneColorPicker.value = rgbToHex(rgb.r, rgb.g, rgb.b);
+              }
+              
+              updateZoneEffectVisibility(i);
+            }
+          }
+          
           if (data.motion_enabled !== undefined) {
             motionSensorEnabled = data.motion_enabled === 1;
             const cb = document.getElementById('motion-sensor');
@@ -714,6 +1718,11 @@
             autoBrightness = data.auto_brightness === 1;
             const cb = document.getElementById('auto-brightness');
             if (cb) cb.checked = autoBrightness;
+            const st = document.getElementById('als-settings');
+            if (st) st.style.display = autoBrightness ? 'block' : 'none';
+            
+            updateBrightnessSlidersState();
+            updateZoneBrightnessSlidersState();
           }
           if (data.aim_light !== undefined) {
             const el = document.getElementById('aim-light-slider');
@@ -730,13 +1739,15 @@
             const el = document.getElementById('timer-interval');
             if (el) { el.value = data.timer_interval; document.getElementById('timer-interval-value').textContent = data.timer_interval; }
           }
+          
+          updateZoneEffectVisibility(activeZone);
+          updateGlobalEffectVisibility();
         })
         .catch(error => {
           console.log('Settings not available or error:', error);
         });
     }
 
-    // Вспомогательные функции для работы с цветом
     function hexToRgb(hex) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? {
@@ -806,9 +1817,6 @@
         return hex.length === 1 ? '0' + hex : hex;
       }).join('');
     }
-
-    // Инициализация видимости элементов
-    updateEffectVisibility();
   </script>
 </body>
 </html>
