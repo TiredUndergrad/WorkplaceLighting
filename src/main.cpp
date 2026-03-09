@@ -19,7 +19,7 @@
 SparkFun_APDS9960 apds;
 uint16_t ambient_light = 0;
 
-AdvParams advParams = { false, 700, 0.02f, 3, false, 60, false, 60 };
+AdvParams advParams = { false, 700, 0.02f, 3, false, 60, false, 60, false };
 uint8_t motionMaxBrightness = 200;
 
 const int ledPin = 2;
@@ -44,30 +44,8 @@ ALSController alsController;
 TimerHandler timerHandler(&ledController);
 
 WebServer server(80);
-MyRequestHandler handler(server, ledPin, &ledController);
+MyRequestHandler handler(server, ledPin, &ledController, &alsController);
 FTPServer ftpSrv(SPIFFS);
-
-uint16_t calculateColorTemperature(uint16_t r, uint16_t g, uint16_t b) {
-  float maxVal = max(r, max(g, b));
-  if (maxVal == 0) return 0;
-  float R = r / maxVal, G = g / maxVal, B = b / maxVal;
-  float X = 0.4124564 * R + 0.3575761 * G + 0.1804375 * B;
-  float Y = 0.2126729 * R + 0.7151522 * G + 0.0721750 * B;
-  float Z = 0.0193339 * R + 0.1191920 * G + 0.9503041 * B;
-  if (X + Y + Z == 0) return 0;
-  float x = X / (X + Y + Z), y = Y / (X + Y + Z);
-  float n = (x - 0.3320) / (0.1858 - y);
-  if (y < 0.1858 || isnan(n) || isinf(n)) {
-    float ratio = (float)r / (float)g;
-    if (ratio > 1.5) return 2000;
-    if (ratio < 0.7) return 8000;
-    return 4000;
-  }
-  float cct = 449.0 * pow(n, 3) + 3525.0 * pow(n, 2) + 6823.3 * n + 5520.33;
-  if (cct < 1000) cct = 1000;
-  if (cct > 20000) cct = 20000;
-  return (uint16_t)cct;
-}
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -109,14 +87,9 @@ void setup() {
 }
 
 void loop() {
-  static uint16_t r, g, b, temp;
   static unsigned long lastLogMs = 0;
   const unsigned long LOG_INTERVAL_MS = 5000;
-
-  apds.readRedLight(r);
-  apds.readGreenLight(g);
-  apds.readBlueLight(b);
-
+  
   server.handleClient();
   ftpSrv.handleFTP();
 
@@ -124,8 +97,6 @@ void loop() {
 
   // Единая точка обновления: таймер → движение → ALS → отрисовка (всё внутри контроллера)
   ledController.update(advParams, motionMaxBrightness, ambient_light);
-
-  temp = calculateColorTemperature(r, g, b);
 
   // Лог состояния раз в 5 секунд
   if (millis() - lastLogMs >= LOG_INTERVAL_MS) {

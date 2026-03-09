@@ -272,25 +272,6 @@ void LedStripController::effectStatic(const EffectParams& p, uint8_t zoneIndex) 
   }
 }
 
-// void LedStripController::effectTemperature(const EffectParams& p, uint8_t zoneIndex) {
-//   CRGB* leds = _leds[zoneIndex];
-//   uint16_t count = _ledCounts[zoneIndex];
-  
-//   float kelvin = 2000.0 + (p.temp / 255.0) * 6000.0;
-//   float temp_kelvin = kelvin / 100.0;
-//   float red, green, blue;
-  
-//   if (temp_kelvin <= 66) { red = 255; } else { red = temp_kelvin - 60; red = 329.698727446 * pow(red, -0.1332047592); if (red < 0) red = 0; if (red > 255) red = 255; }
-//   if (temp_kelvin <= 66) { green = temp_kelvin; green = 99.4708025861 * log(green) - 161.1195681661; if (green < 0) green = 0; if (green > 255) green = 255; } else { green = temp_kelvin - 60; green = 288.1221695283 * pow(green, -0.0755148492); if (green < 0) green = 0; if (green > 255) green = 255; }
-//   if (temp_kelvin >= 66) { blue = 255; } else { if (temp_kelvin <= 19) blue = 0; else { blue = temp_kelvin - 10; blue = 138.5177312231 * log(blue) - 305.0447927307; if (blue < 0) blue = 0; if (blue > 255) blue = 255; } }
-  
-//   CRGB color((uint8_t)red, (uint8_t)green, (uint8_t)blue);
-//   for (int i = 0; i < count; i++) {
-//     leds[i] = color;
-//     leds[i].nscale8(p.val);
-//   }
-// }
-
 void LedStripController::effectTemperature(const EffectParams& p, uint8_t zoneIndex) {
   CRGB* leds = _leds[zoneIndex];
   uint16_t count = _ledCounts[zoneIndex];

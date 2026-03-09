@@ -1,11 +1,12 @@
 #include "MyRequestHandler.hpp"
 #include "AdvParams.h"
+#include "ALSController.hpp"
 #include <ESPmDNS.h>
 
 extern uint16_t ambient_light;
 
-MyRequestHandler::MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController) 
-    : _server(server), _ledPin(ledPin), _ledState(false), _isConfigured(false), _ledController(ledController) {
+MyRequestHandler::MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController, ALSController* alsController) 
+    : _server(server), _ledPin(ledPin), _ledState(false), _isConfigured(false), _ledController(ledController), _alsController(alsController) {
     pinMode(_ledPin, OUTPUT);
     digitalWrite(_ledPin, LOW);
 }
@@ -38,6 +39,8 @@ void MyRequestHandler::begin() {
     _server.on("/setals", HTTP_POST, [this]() { this->handleSetALS(); });
     _server.on("/settimer", HTTP_POST, [this]() { this->handleSetTimer(); });
     _server.on("/getsettings", HTTP_GET, [this]() { this->handleGetSettings(); });
+    _server.on("/autotemp/start", HTTP_POST, [this]() { this->handleAutoTempStart(); });
+    _server.on("/autotemp/status", HTTP_GET, [this]() { this->handleAutoTempStatus(); });
     
     // Универсальный обработчик для ВСЕХ статических файлов
     _server.onNotFound([this]() {
@@ -319,8 +322,15 @@ void MyRequestHandler::handleScanWiFi() {
 }
 
 void MyRequestHandler::handleLightData() {
-  String response = "{\"ambient_light\": " + String(ambient_light) + "}";
-  _server.send(200, "application/json", response);
+  String json = "{\"ambient_light\": " + String(ambient_light);
+  if (_ledController) {
+    EffectParams params = _ledController->getCurrentEffect();
+    json += ",\"brightness\":" + String(params.val);
+    uint16_t tempK = (uint16_t)(params.temp * 8000 / 255) + 2000;
+    json += ",\"temp\":" + String(tempK);
+  }
+  json += "}";
+  _server.send(200, "application/json", json);
 }
 
 void MyRequestHandler::handleWiFiStatus() {
@@ -504,6 +514,7 @@ void MyRequestHandler::handleSetALS() {
     else if (name == "aim_light") advParams.aimLight = (int)value.toInt();
     else if (name == "k") advParams.k = value.toFloat();
     else if (name == "delay_als") advParams.delayALS = (uint8_t)value.toInt();
+    else if (name == "auto_temp") advParams.autoTempMode = (value.toInt() == 1);
   }
   _server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
@@ -576,7 +587,33 @@ void MyRequestHandler::handleGetSettings() {
   json += ",\"delay_als\":" + String(advParams.delayALS);
   json += ",\"timer_enabled\":" + String(advParams.timEnable ? 1 : 0);
   json += ",\"timer_interval\":" + String(advParams.interval);
+  json += ",\"auto_temp\":" + String(advParams.autoTempMode ? 1 : 0);
   json += "}";
   
+  _server.send(200, "application/json", json);
+}
+
+void MyRequestHandler::handleAutoTempStart() {
+  if (!_alsController) {
+    _server.send(500, "application/json", "{\"error\":\"ALS controller not initialized\"}");
+    return;
+  }
+  _alsController->startAutoTempCalibration();
+  _server.send(200, "application/json", "{\"status\":\"started\"}");
+}
+
+void MyRequestHandler::handleAutoTempStatus() {
+  if (!_alsController) {
+    _server.send(500, "application/json", "{\"error\":\"ALS controller not initialized\"}");
+    return;
+  }
+  String json = "{";
+  json += "\"enabled\":" + String(advParams.autoTempMode ? 1 : 0);
+  json += ",\"calibrated\":" + String(_alsController->isAutoTempCalibrated() ? 1 : 0);
+  json += ",\"calibrating\":" + String(_alsController->isAutoTempCalibrationRunning() ? 1 : 0);
+  json += ",\"progress\":" + String(_alsController->getAutoTempCalibrationProgress());
+  json += ",\"current_temp\":" + String(_alsController->getCurrentColorTemperature());
+  json += ",\"recommended_temp\":" + String(_alsController->getRecommendedColorTemperature(ambient_light));
+  json += "}";
   _server.send(200, "application/json", json);
 }

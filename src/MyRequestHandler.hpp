@@ -6,6 +6,7 @@
 #include <EEPROM.h>
 #include <WiFi.h>
 #include "LedStripController.hpp"
+class ALSController;
 
 struct WiFiSettings {
   char ssid[32];
@@ -14,7 +15,7 @@ struct WiFiSettings {
 
 class MyRequestHandler {
 public:
-    MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController = nullptr);
+    MyRequestHandler(WebServer& server, int ledPin, LedStripController* ledController = nullptr, ALSController* alsController = nullptr);
     
     void begin();
     void handleClient();
@@ -40,6 +41,8 @@ public:
     void handleSetALS();
     void handleSetTimer();
     void handleGetSettings();
+    void handleAutoTempStart();
+    void handleAutoTempStatus();
     
 private:
     WebServer& _server;
@@ -48,6 +51,7 @@ private:
     bool _isConfigured;
     bool _indexExists;  // Кэш для проверки существования index.html
     LedStripController* _ledController;  // Указатель на контроллер LED ленты
+    ALSController* _alsController;
     
     void loadWiFiSettings();
     void checkIndexFile();  // Метод для проверки файла
