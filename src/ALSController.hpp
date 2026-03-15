@@ -9,14 +9,9 @@
 class ALSController {
 public:
     ALSController();
-    
     void reset();
-    
-    // Основной метод: вызывается каждый цикл loop
     void update(uint16_t ambientLight, const AdvParams& params,
                 LedStripController* led, bool motionActive);
-    
-    // Для логирования
     String getStatusForLog(uint16_t ambientLight, const AdvParams& params) const;
 
     // Автонастройка цветовой температуры + калибровка
@@ -28,35 +23,31 @@ public:
     uint16_t getRecommendedColorTemperature(uint16_t ambientLight) const;
 
 private:
-    LowPassFilter _filter;
-    uint16_t _lastFiltered;
+    LowPassFilter _filter;              // Фильтр для сырых показаний датчика
+    uint16_t _lastRawFiltered;           // Отфильтрованное общее освещение (для яркости)
+    uint16_t _lastAmbientWithoutStrip;   // Оценка естественного света (для температуры)
     
-    // Для цикла подстройки
     enum AdjustmentPhase {
-        PHASE_IDLE,           // Ожидание следующего цикла
-        PHASE_WAIT_START,     // Ожидание перед началом подстройки (10 сек)
-        PHASE_ADJUSTING       // Активная подстройка яркости
+        PHASE_IDLE,
+        PHASE_WAIT_START,
+        PHASE_ADJUSTING
     };
     
     AdjustmentPhase _phase;
     unsigned long _phaseStartTime;
     unsigned long _lastAdjustTime;
     int _lastBrightness;
-    float _currentAdjustInterval;  // Текущий адаптивный интервал
-    
-    // ---------- Калибровка вклада ленты по температуре ----------
+    unsigned long _currentAdjustInterval;
+
     struct TemperatureCalibrationPoint {
-        uint16_t temperature;          // Кельвины
-        float contribution[256];       // Вклад при разной яркости
+        uint16_t temperature;
+        float contribution[256];
     };
 
     struct CalibrationData {
         static const int TEMP_POINTS = 5;
         TemperatureCalibrationPoint tempPoints[TEMP_POINTS];
         bool calibrated = false;
-        uint8_t maxBrightness = 255;
-        float ambientLight = 0.0f;     // Оценка естественного света
-
         float getContribution(uint8_t brightness, uint16_t temperature) const;
     };
 
@@ -64,11 +55,11 @@ private:
 
     enum AutoTempCalibPhase {
         CAL_PHASE_IDLE,
-        CAL_PHASE_WAIT_DARK,      // ожидание перед измерением базового уровня
-        CAL_PHASE_MEASURE_BASE,   // измерение «темно»
-        CAL_PHASE_SET_LEVEL,      // установка очередной температуры/яркости
-        CAL_PHASE_MEASURE_LEVEL,  // измерение при заданной яркости
-        CAL_PHASE_INTERPOLATE,    // интерполяция по яркостям для текущей температуры
+        CAL_PHASE_WAIT_DARK,
+        CAL_PHASE_MEASURE_BASE,
+        CAL_PHASE_SET_LEVEL,
+        CAL_PHASE_MEASURE_LEVEL,
+        CAL_PHASE_INTERPOLATE,
         CAL_PHASE_DONE
     };
 
@@ -87,25 +78,20 @@ private:
     uint16_t _currentTempK = 4000;
     
     // Константы
-    static const unsigned long CYCLE_INTERVAL = 3000;  // мс секунд между циклами
-    static const unsigned long MIN_ADJUST_INTERVAL = 200;    // Минимальный интервал (далеко от цели)
-    static const unsigned long MAX_ADJUST_INTERVAL = 500;   // Максимальный интервал (близко к цели)
-    static const uint8_t BRIGHTNESS_STEP = 1;           // Шаг изменения яркости
-    static const uint8_t HYSTERESIS = 50;               // Гистерезис для остановки
-    static const uint16_t CLOSE_THRESHOLD = 500;         // Порог "близости" к цели
-    
-    // Вспомогательные методы
+    static const unsigned long CYCLE_INTERVAL = 3000;
+    static const unsigned long MIN_ADJUST_INTERVAL = 200;
+    static const unsigned long MAX_ADJUST_INTERVAL = 500;
+    static const uint8_t BRIGHTNESS_STEP = 1;
+    static const uint8_t HYSTERESIS = 50;
+    static const uint16_t CLOSE_THRESHOLD = 500;
+    static const float AMBIENT_SMOOTHING; // Коэффициент сглаживания для естественного света
+
     void startAdjustmentCycle();
     void performAdjustmentStep(uint16_t target, uint16_t current, LedStripController* led);
     bool isTargetReached(uint16_t target, uint16_t current) const;
     unsigned long calculateAdaptiveInterval(uint16_t target, uint16_t current) const;
-
-    // Обработка не блокирующей калибровки автоцвета
     void processAutoTempCalibration(uint16_t ambientLight, LedStripController* led);
-
-    // Подсчёт «чистого» внешнего света (без вклада ленты)
-    uint16_t computeAmbientWithoutStrip(uint16_t totalLight, const AdvParams& params,
-                                        LedStripController* led);
+    uint16_t computeAmbientWithoutStrip(uint16_t totalLight, LedStripController* led);
 };
 
 #endif

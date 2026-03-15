@@ -324,10 +324,24 @@ void MyRequestHandler::handleScanWiFi() {
 void MyRequestHandler::handleLightData() {
   String json = "{\"ambient_light\": " + String(ambient_light);
   if (_ledController) {
-    EffectParams params = _ledController->getCurrentEffect();
-    json += ",\"brightness\":" + String(params.val);
-    uint16_t tempK = (uint16_t)(params.temp * 8000 / 255) + 2000;
-    json += ",\"temp\":" + String(tempK);
+    // Считаем ленту "включённой" только если она реально светит,
+    // а не заблокирована режимом движения/таймера.
+    bool ledOn = _ledController->isOn() && !_ledController->getBlock();
+    json += ",\"led_on\":" + String(ledOn ? 1 : 0);
+    json += ",\"motion_enabled\":" + String(advParams.moveMode ? 1 : 0);
+    json += ",\"timer_blinking\":" + String(_ledController->isTimerBlinking() ? 1 : 0);
+
+    if (_ledController->isIndividualMode()) {
+      SplittingParams sp = _ledController->getSplittingParams();
+      json += ",\"zone1\":{\"brightness\":" + String(sp.val1) + ",\"temp\":" + String((sp.temp1 * 8000 / 255) + 2000) + "}";
+      json += ",\"zone2\":{\"brightness\":" + String(sp.val2) + ",\"temp\":" + String((sp.temp2 * 8000 / 255) + 2000) + "}";
+      json += ",\"zone3\":{\"brightness\":" + String(sp.val3) + ",\"temp\":" + String((sp.temp3 * 8000 / 255) + 2000) + "}";
+    } else {
+      EffectParams params = _ledController->getCurrentEffect();
+      json += ",\"brightness\":" + String(params.val);
+      uint16_t tempK = (uint16_t)(params.temp * 8000 / 255) + 2000;
+      json += ",\"temp\":" + String(tempK);
+    }
   }
   json += "}";
   _server.send(200, "application/json", json);
@@ -515,6 +529,9 @@ void MyRequestHandler::handleSetALS() {
     else if (name == "k") advParams.k = value.toFloat();
     else if (name == "delay_als") advParams.delayALS = (uint8_t)value.toInt();
     else if (name == "auto_temp") advParams.autoTempMode = (value.toInt() == 1);
+    else if (name == "auto_temp_zone1") advParams.autoTempZone1 = (value.toInt() == 1);
+    else if (name == "auto_temp_zone2") advParams.autoTempZone2 = (value.toInt() == 1);
+    else if (name == "auto_temp_zone3") advParams.autoTempZone3 = (value.toInt() == 1);
   }
   _server.send(200, "application/json", "{\"status\":\"ok\"}");
 }
@@ -579,7 +596,11 @@ void MyRequestHandler::handleGetSettings() {
     json += "\"saturation\":" + String(params.sat) + ",";
     json += "\"hsvval\":" + String(params.hsvVal);
   }
+  // Для UI считаем "led_on" только если лента реально светит,
+  // а не заблокирована режимом движения/таймера.
+  json += ",\"led_on\":" + String((_ledController->isOn() && !_ledController->getBlock()) ? 1 : 0);
   json += ",\"motion_enabled\":" + String(advParams.moveMode ? 1 : 0);
+  json += ",\"timer_blinking\":" + String(_ledController->isTimerBlinking() ? 1 : 0);
   json += ",\"motion_timeout\":" + String(advParams.timeOut);
   json += ",\"auto_brightness\":" + String(advParams.brightMode ? 1 : 0);
   json += ",\"aim_light\":" + String(advParams.aimLight);
@@ -588,6 +609,9 @@ void MyRequestHandler::handleGetSettings() {
   json += ",\"timer_enabled\":" + String(advParams.timEnable ? 1 : 0);
   json += ",\"timer_interval\":" + String(advParams.interval);
   json += ",\"auto_temp\":" + String(advParams.autoTempMode ? 1 : 0);
+  json += ",\"auto_temp_zone1\":" + String(advParams.autoTempZone1 ? 1 : 0);
+  json += ",\"auto_temp_zone2\":" + String(advParams.autoTempZone2 ? 1 : 0);
+  json += ",\"auto_temp_zone3\":" + String(advParams.autoTempZone3 ? 1 : 0);
   json += "}";
   
   _server.send(200, "application/json", json);

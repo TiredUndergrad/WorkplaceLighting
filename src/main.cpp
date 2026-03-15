@@ -19,7 +19,7 @@
 SparkFun_APDS9960 apds;
 uint16_t ambient_light = 0;
 
-AdvParams advParams = { false, 700, 0.02f, 3, false, 60, false, 60, false };
+AdvParams advParams = { false, 700, 0.02f, 3, false, 60, false, 60, false, false, false, false };
 uint8_t motionMaxBrightness = 200;
 
 const int ledPin = 2;

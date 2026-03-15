@@ -430,7 +430,7 @@
     /* Сетка дополнительных функций */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
       margin-top: 20px;
     }
@@ -556,6 +556,51 @@
 
     .temperature-slider-wrapper.disabled::after {
       content: 'Управляется автокоррекцией температуры';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Стили для заблокированных слайдеров яркости */
+    .control-group.disabled, .control-group.motion-off,
+    #brightness-group.disabled, #brightness-group.motion-off,
+    [id$="-brightness-group"].disabled, [id$="-brightness-group"].motion-off {
+      opacity: 0.5;
+      pointer-events: none;
+      position: relative;
+    }
+    
+    #brightness-group.disabled::after, [id$="-brightness-group"].disabled::after {
+      content: 'Управляется автояркостью';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    #brightness-group.motion-off::after, [id$="-brightness-group"].motion-off::after {
+      content: 'Выключено из-за бездействия';
       position: absolute;
       top: 50%;
       left: 50%;
@@ -814,7 +859,7 @@
         </div>
       </div>
 
-      <!-- Дополнительные функции в виде сетки 3x1 -->
+      <!-- Дополнительные функции в виде сетки 4x1 (автояркость, движение, таймер, калибровка) -->
       <div class="features-grid">
         <!-- Автояркость -->
         <div class="feature-card">
@@ -850,9 +895,20 @@
           </div>
           <div id="timer-settings" style="display: none;">
             <label for="timer-interval" style="font-size: 0.85rem;">Интервал: <span id="timer-interval-value">60</span>мин</label>
-            <input type="range" id="timer-interval" min="1" max="180" value="60" step="1"
+            <input type="range" id="timer-interval" min="5" max="120" value="60" step="5"
                   oninput="updateTimerInterval(this.value)">
             <p class="timer-info" style="font-size: 0.8rem; margin-top: 5px;">Следующее: <span id="timer-next">--:--</span></p>
+          </div>
+        </div>
+
+        <!-- Калибровка температуры (кнопка + прогресс) -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <label style="font-weight:600;">Калибровка</label>
+          </div>
+          <div style="margin-top: 8px;">
+            <button class="btn btn-secondary" style="min-width: 100%; padding: 8px 12px; font-size: 0.85rem; margin-bottom: 6px;" onclick="startAutoTempCalibration()">Калибровать</button>
+            <span style="font-size: 0.8rem; color: var(--gray);">Прогресс: <span id="auto-temp-progress">0</span>%</span>
           </div>
         </div>
       </div>
@@ -927,7 +983,7 @@
         </div>
       </div>
 
-      <!-- Температура белого и автонастройка -->
+      <!-- Температура белого -->
       <div class="control-group" id="temperature-group">
         <label for="temperature-slider">Цветовая температура: <span id="temperature-value">6000</span> K</label>
         <div class="temperature-slider-wrapper" id="temperature-slider-wrapper">
@@ -939,15 +995,12 @@
             <span>10000K (холодный)</span>
           </div>
         </div>
+        <!-- Флажок автокоррекции температуры (без кнопки и прогресса) -->
         <div style="margin-top: 12px;">
           <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
             <input type="checkbox" id="auto-temp" onchange="toggleAutoTemperature()">
             Автокоррекция температуры
           </label>
-          <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-secondary" style="min-width:140px;padding:8px 12px;font-size:0.9rem;" onclick="startAutoTempCalibration()">Калибровка</button>
-            <span style="font-size:0.85rem;color:var(--gray);">Прогресс калибровки: <span id="auto-temp-progress">0</span>%</span>
-          </div>
         </div>
       </div>
 
@@ -1046,12 +1099,20 @@
         <!-- Температура белого для зоны 1 с подписями -->
         <div class="control-group" id="zone1-temperature-group">
           <label for="zone1-temperature">Цветовая температура: <span id="zone1-temperature-value">6000</span> K</label>
-          <input type="range" id="zone1-temperature" min="2000" max="10000" value="6000" step="100"
-                 oninput="updateZoneTemperature(1, this.value)">
-          <div class="temperature-scale">
-            <span>2000K (теплый)</span>
-            <span>6000K (нейтральный)</span>
-            <span>10000K (холодный)</span>
+          <div class="temperature-slider-wrapper" id="zone1-temperature-wrapper">
+            <input type="range" id="zone1-temperature" min="2000" max="10000" value="6000" step="100"
+                   oninput="updateZoneTemperature(1, this.value)">
+            <div class="temperature-scale">
+              <span>2000K (теплый)</span>
+              <span>6000K (нейтральный)</span>
+              <span>10000K (холодный)</span>
+            </div>
+          </div>
+          <div style="margin-top: 12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
+              <input type="checkbox" id="zone1-auto-temp" onchange="toggleZoneAutoTemp(1)">
+              Автокоррекция температуры
+            </label>
           </div>
         </div>
 
@@ -1138,12 +1199,20 @@
         <!-- Температура белого для зоны 2 с подписями -->
         <div class="control-group" id="zone2-temperature-group">
           <label for="zone2-temperature">Цветовая температура: <span id="zone2-temperature-value">6000</span> K</label>
-          <input type="range" id="zone2-temperature" min="2000" max="10000" value="6000" step="100"
-                 oninput="updateZoneTemperature(2, this.value)">
-          <div class="temperature-scale">
-            <span>2000K (теплый)</span>
-            <span>6000K (нейтральный)</span>
-            <span>10000K (холодный)</span>
+          <div class="temperature-slider-wrapper" id="zone2-temperature-wrapper">
+            <input type="range" id="zone2-temperature" min="2000" max="10000" value="6000" step="100"
+                   oninput="updateZoneTemperature(2, this.value)">
+            <div class="temperature-scale">
+              <span>2000K (теплый)</span>
+              <span>6000K (нейтральный)</span>
+              <span>10000K (холодный)</span>
+            </div>
+          </div>
+          <div style="margin-top: 12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
+              <input type="checkbox" id="zone2-auto-temp" onchange="toggleZoneAutoTemp(2)">
+              Автокоррекция температуры
+            </label>
           </div>
         </div>
 
@@ -1230,12 +1299,20 @@
         <!-- Температура белого для зоны 3 с подписями -->
         <div class="control-group" id="zone3-temperature-group">
           <label for="zone3-temperature">Цветовая температура: <span id="zone3-temperature-value">6000</span> K</label>
-          <input type="range" id="zone3-temperature" min="2000" max="10000" value="6000" step="100"
-                 oninput="updateZoneTemperature(3, this.value)">
-          <div class="temperature-scale">
-            <span>2000K (теплый)</span>
-            <span>6000K (нейтральный)</span>
-            <span>10000K (холодный)</span>
+          <div class="temperature-slider-wrapper" id="zone3-temperature-wrapper">
+            <input type="range" id="zone3-temperature" min="2000" max="10000" value="6000" step="100"
+                   oninput="updateZoneTemperature(3, this.value)">
+            <div class="temperature-scale">
+              <span>2000K (теплый)</span>
+              <span>6000K (нейтральный)</span>
+              <span>10000K (холодный)</span>
+            </div>
+          </div>
+          <div style="margin-top: 12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
+              <input type="checkbox" id="zone3-auto-temp" onchange="toggleZoneAutoTemp(3)">
+              Автокоррекция температуры
+            </label>
           </div>
         </div>
 
@@ -1260,6 +1337,9 @@
     let motionSensorEnabled = false;
     let timerEnabled = false;
     let autoTempEnabled = false;
+    let ledOn = true;
+    let motionEnabled = false;
+    let timerBlinking = false;
     
     // Цветовые пространства
     let globalColorSpace = 'hsv';
@@ -1270,11 +1350,11 @@
     let currentGlobalRGB = { r: 255, g: 255, b: 255 };
     
     let zoneSettings = {
-      zone1: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, 
+      zone1: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true },
-      zone2: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, 
+      zone2: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true },
-      zone3: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, 
+      zone3: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true }
     };
     let activeZone = 1;
@@ -1283,33 +1363,40 @@
     function updateBrightnessSlidersState() {
       const brightnessSlider = document.getElementById('brightness-slider');
       const brightnessGroup = document.getElementById('brightness-group');
-      
-      if (autoBrightness) {
-        if (brightnessGroup) brightnessGroup.classList.add('disabled');
-        if (brightnessSlider) brightnessSlider.disabled = true;
-      } else {
-        if (brightnessGroup) brightnessGroup.classList.remove('disabled');
-        if (brightnessSlider) brightnessSlider.disabled = false;
+      const motionOff = !ledOn && motionEnabled;  // Выключено из-за движения
+
+      if (brightnessGroup) {
+        brightnessGroup.classList.remove('disabled', 'motion-off');
+        if (motionOff) {
+          brightnessGroup.classList.add('motion-off');
+        } else if (autoBrightness) {
+          brightnessGroup.classList.add('disabled');
+        }
       }
+      if (brightnessSlider) brightnessSlider.disabled = motionOff || autoBrightness;
     }
 
     // Функция для обновления состояния ползунков яркости в зонах
     function updateZoneBrightnessSlidersState() {
+      const motionOff = !ledOn && motionEnabled;  // Выключено из-за движения
       for (let i = 1; i <= 3; i++) {
         const zoneSlider = document.getElementById(`zone${i}-brightness`);
         const zoneGroup = document.getElementById(`zone${i}-brightness-group`);
-        
-        if (autoBrightness) {
-          if (zoneGroup) zoneGroup.classList.add('disabled');
-          if (zoneSlider) zoneSlider.disabled = true;
-        } else {
-          if (zoneGroup) zoneGroup.classList.remove('disabled');
-          if (zoneSlider) zoneSlider.disabled = false;
+
+        if (zoneGroup) {
+          zoneGroup.classList.remove('disabled', 'motion-off');
+          if (motionOff) {
+            zoneGroup.classList.add('motion-off');
+          } else if (autoBrightness) {
+            zoneGroup.classList.add('disabled');
+          }
         }
+        if (zoneSlider) zoneSlider.disabled = motionOff || autoBrightness;
       }
     }
 
     function updateTemperatureControlState() {
+      // Общий режим
       const wrapper = document.getElementById('temperature-slider-wrapper');
       const slider = document.getElementById('temperature-slider');
       if (autoTempEnabled) {
@@ -1318,6 +1405,22 @@
       } else {
         if (wrapper) wrapper.classList.remove('disabled');
         if (slider) slider.disabled = false;
+      }
+      
+      // Индивидуальный режим (зоны)
+      for (let i = 1; i <= 3; i++) {
+        const zoneWrapper = document.getElementById(`zone${i}-temperature-wrapper`);
+        const zoneSlider = document.getElementById(`zone${i}-temperature`);
+        const zoneEffectEl = document.getElementById(`zone${i}-effect`);
+        const zoneEffect = zoneEffectEl ? parseInt(zoneEffectEl.value, 10) : (zoneSettings[`zone${i}`]?.effect ?? 0);
+        const zoneAutoTemp = zoneSettings[`zone${i}`]?.autoTemp ?? false;
+        const shouldDisable = zoneEffect === 1 && zoneAutoTemp;
+        
+        if (zoneWrapper) {
+          if (shouldDisable) zoneWrapper.classList.add('disabled');
+          else zoneWrapper.classList.remove('disabled');
+        }
+        if (zoneSlider) zoneSlider.disabled = shouldDisable;
       }
     }
 
@@ -1557,6 +1660,12 @@
       updateZoneBrightnessSlidersState();
     };
 
+    // Округление температуры до сотен для отображения
+    function roundTempForDisplay(val) {
+      const n = parseInt(val, 10);
+      return isNaN(n) ? val : Math.round(n / 100) * 100;
+    }
+
     // Загрузка данных освещенности
     function fetchLightData() {
       fetch('/light')
@@ -1565,19 +1674,60 @@
           const ambientEl = document.getElementById('ambient-light');
           if (ambientEl) ambientEl.textContent = data.ambient_light;
 
-          if (data.brightness !== undefined) {
-            const bSlider = document.getElementById('brightness-slider');
-            const bValue = document.getElementById('brightness-value');
-            if (bSlider) bSlider.value = data.brightness;
-            if (bValue) bValue.textContent = data.brightness;
+          if (data.led_on !== undefined) ledOn = data.led_on === 1;
+          if (data.motion_enabled !== undefined) motionEnabled = data.motion_enabled === 1;
+          if (data.timer_blinking !== undefined) timerBlinking = data.timer_blinking === 1;
+
+          const motionOff = !ledOn && motionEnabled;
+          const isIndividual = data.zone1 !== undefined;
+          if (isIndividual) {
+            for (let i = 1; i <= 3; i++) {
+              const z = data[`zone${i}`];
+              if (!z) continue;
+              const zoneSlider = document.getElementById(`zone${i}-brightness`);
+              const zoneValue = document.getElementById(`zone${i}-brightness-value`);
+              const zoneTSlider = document.getElementById(`zone${i}-temperature`);
+              const zoneTValue = document.getElementById(`zone${i}-temperature-value`);
+              const zoneEffectEl = document.getElementById(`zone${i}-effect`);
+              const zoneEffect = zoneEffectEl ? parseInt(zoneEffectEl.value, 10) : (zoneSettings[`zone${i}`]?.effect ?? 0);
+              if (zoneSlider && zoneValue && z.brightness !== undefined) {
+                if (autoBrightness && !timerBlinking && !motionOff) {
+                  zoneSlider.value = z.brightness;
+                  zoneValue.textContent = z.brightness;
+                }
+              }
+              if (zoneTSlider && zoneTValue && z.temp !== undefined && zoneEffect === 1 && zoneSettings[`zone${i}`].autoTemp) {
+                const rounded = roundTempForDisplay(z.temp);
+                zoneTSlider.value = rounded;
+                zoneTValue.textContent = rounded;
+              }
+            }
+          } else {
+            if (data.brightness !== undefined) {
+              const bSlider = document.getElementById('brightness-slider');
+              const bValue = document.getElementById('brightness-value');
+              if (bSlider && bValue) {
+                if (autoBrightness && !timerBlinking && !motionOff) {
+                  bSlider.value = data.brightness;
+                  bValue.textContent = data.brightness;
+                }
+              }
+            }
+            if (data.temp !== undefined) {
+              const tSlider = document.getElementById('temperature-slider');
+              const tValue = document.getElementById('temperature-value');
+              if (tSlider && tValue) {
+                if (autoTempEnabled) {
+                  const rounded = roundTempForDisplay(data.temp);
+                  tSlider.value = rounded;
+                  tValue.textContent = rounded;
+                }
+              }
+            }
           }
 
-          if (data.temp !== undefined) {
-            const tSlider = document.getElementById('temperature-slider');
-            const tValue = document.getElementById('temperature-value');
-            if (tSlider) tSlider.value = data.temp;
-            if (tValue) tValue.textContent = data.temp;
-          }
+          updateBrightnessSlidersState();
+          updateZoneBrightnessSlidersState();
         })
         .catch(error => {
           console.log('Error fetching light data:', error);
@@ -1718,7 +1868,7 @@
     }
 
     function updateGlobalTemperature(value) {
-      document.getElementById('temperature-value').textContent = value;
+      document.getElementById('temperature-value').textContent = roundTempForDisplay(value);
       sendGlobalEffectSettings();
     }
 
@@ -1796,6 +1946,8 @@
           if (speedGroup) speedGroup.style.display = 'block';
         }
       }
+      zoneSettings[`zone${zoneNum}`].effect = effect;
+      updateTemperatureControlState();
     }
 
     function updateZoneBrightness(zoneNum, value) {
@@ -1869,7 +2021,7 @@
     }
 
     function updateZoneTemperature(zoneNum, value) {
-      document.getElementById(`zone${zoneNum}-temperature-value`).textContent = value;
+      document.getElementById(`zone${zoneNum}-temperature-value`).textContent = roundTempForDisplay(value);
       zoneSettings[`zone${zoneNum}`].temp = parseInt(value);
       sendZoneEffectSettings(zoneNum);
     }
@@ -1995,7 +2147,10 @@
         aim_light: aimLight,
         k: '0.02',
         delay_als: '3',
-        auto_temp: autoTempEnabled ? '1' : '0'
+        auto_temp: autoTempEnabled ? '1' : '0',
+        auto_temp_zone1: zoneSettings.zone1.autoTemp ? '1' : '0',
+        auto_temp_zone2: zoneSettings.zone2.autoTemp ? '1' : '0',
+        auto_temp_zone3: zoneSettings.zone3.autoTemp ? '1' : '0'
       });
       fetch('/setals', {
         method: 'POST',
@@ -2025,6 +2180,13 @@
       updateTemperatureControlState();
     }
 
+    function toggleZoneAutoTemp(zoneNum) {
+      const cb = document.getElementById(`zone${zoneNum}-auto-temp`);
+      zoneSettings[`zone${zoneNum}`].autoTemp = cb ? cb.checked : false;
+      sendALSSettings();
+      updateTemperatureControlState();
+    }
+
     function startAutoTempCalibration() {
       fetch('/autotemp/start', {
         method: 'POST'
@@ -2050,6 +2212,13 @@
           if (data.brightness !== undefined) {
             document.getElementById('brightness-slider').value = data.brightness;
             document.getElementById('brightness-value').textContent = data.brightness;
+          }
+          if (data.temp !== undefined) {
+            const rounded = roundTempForDisplay(data.temp);
+            const tEl = document.getElementById('temperature-slider');
+            const tVal = document.getElementById('temperature-value');
+            if (tEl) tEl.value = rounded;
+            if (tVal) tVal.textContent = rounded;
           }
           
           // Загрузка HSV данных
@@ -2112,8 +2281,9 @@
               
               const tempEl = document.getElementById(`zone${i}-temperature`);
               if (tempEl) {
-                tempEl.value = zoneSettings[`zone${i}`].temp;
-                document.getElementById(`zone${i}-temperature-value`).textContent = zoneSettings[`zone${i}`].temp;
+                const rounded = roundTempForDisplay(zoneSettings[`zone${i}`].temp);
+                tempEl.value = rounded;
+                document.getElementById(`zone${i}-temperature-value`).textContent = rounded;
               }
               
               const speedEl = document.getElementById(`zone${i}-speed`);
@@ -2165,12 +2335,19 @@
             }
           }
           
+          if (data.led_on !== undefined) ledOn = data.led_on === 1;
           if (data.motion_enabled !== undefined) {
             motionSensorEnabled = data.motion_enabled === 1;
+            motionEnabled = data.motion_enabled === 1;
             const cb = document.getElementById('motion-sensor');
             if (cb) cb.checked = motionSensorEnabled;
             const st = document.getElementById('motion-settings');
             if (st) st.style.display = motionSensorEnabled ? 'block' : 'none';
+          }
+          if (data.timer_blinking !== undefined) timerBlinking = data.timer_blinking === 1;
+          if (data.led_on !== undefined || data.motion_enabled !== undefined || data.timer_blinking !== undefined) {
+            updateBrightnessSlidersState();
+            updateZoneBrightnessSlidersState();
           }
           if (data.motion_timeout !== undefined) {
             const el = document.getElementById('motion-timeout');
@@ -2205,6 +2382,24 @@
             autoTempEnabled = data.auto_temp === 1;
             const cb = document.getElementById('auto-temp');
             if (cb) cb.checked = autoTempEnabled;
+            updateTemperatureControlState();
+          }
+          if (data.auto_temp_zone1 !== undefined) {
+            zoneSettings.zone1.autoTemp = data.auto_temp_zone1 === 1;
+            const cb = document.getElementById('zone1-auto-temp');
+            if (cb) cb.checked = zoneSettings.zone1.autoTemp;
+          }
+          if (data.auto_temp_zone2 !== undefined) {
+            zoneSettings.zone2.autoTemp = data.auto_temp_zone2 === 1;
+            const cb = document.getElementById('zone2-auto-temp');
+            if (cb) cb.checked = zoneSettings.zone2.autoTemp;
+          }
+          if (data.auto_temp_zone3 !== undefined) {
+            zoneSettings.zone3.autoTemp = data.auto_temp_zone3 === 1;
+            const cb = document.getElementById('zone3-auto-temp');
+            if (cb) cb.checked = zoneSettings.zone3.autoTemp;
+          }
+          if (data.auto_temp_zone1 !== undefined || data.auto_temp_zone2 !== undefined || data.auto_temp_zone3 !== undefined) {
             updateTemperatureControlState();
           }
           
