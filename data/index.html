@@ -1373,7 +1373,9 @@
           brightnessGroup.classList.add('disabled');
         }
       }
-      if (brightnessSlider) brightnessSlider.disabled = motionOff || autoBrightness;
+      if (brightnessSlider) {
+        brightnessSlider.disabled = motionOff || autoBrightness;
+      }
     }
 
     // Функция для обновления состояния ползунков яркости в зонах
@@ -1680,6 +1682,7 @@
 
           const motionOff = !ledOn && motionEnabled;
           const isIndividual = data.zone1 !== undefined;
+          
           if (isIndividual) {
             for (let i = 1; i <= 3; i++) {
               const z = data[`zone${i}`];
@@ -1690,11 +1693,12 @@
               const zoneTValue = document.getElementById(`zone${i}-temperature-value`);
               const zoneEffectEl = document.getElementById(`zone${i}-effect`);
               const zoneEffect = zoneEffectEl ? parseInt(zoneEffectEl.value, 10) : (zoneSettings[`zone${i}`]?.effect ?? 0);
+              
               if (zoneSlider && zoneValue && z.brightness !== undefined) {
-                if (autoBrightness && !timerBlinking && !motionOff) {
-                  zoneSlider.value = z.brightness;
-                  zoneValue.textContent = z.brightness;
-                }
+                // Обновляем значение слайдера, но не отправляем его на сервер
+                zoneSlider.value = z.brightness;
+                zoneValue.textContent = z.brightness;
+                zoneSettings[`zone${i}`].brightness = z.brightness;
               }
               if (zoneTSlider && zoneTValue && z.temp !== undefined && zoneEffect === 1 && zoneSettings[`zone${i}`].autoTemp) {
                 const rounded = roundTempForDisplay(z.temp);
@@ -1707,10 +1711,9 @@
               const bSlider = document.getElementById('brightness-slider');
               const bValue = document.getElementById('brightness-value');
               if (bSlider && bValue) {
-                if (autoBrightness && !timerBlinking && !motionOff) {
-                  bSlider.value = data.brightness;
-                  bValue.textContent = data.brightness;
-                }
+                // Обновляем значение слайдера, но не отправляем его на сервер
+                bSlider.value = data.brightness;
+                bValue.textContent = data.brightness;
               }
             }
             if (data.temp !== undefined) {
@@ -1860,9 +1863,13 @@
       }
     }
 
+    // Обновленная функция для изменения яркости в общем режиме
     function updateGlobalBrightness(value, silent = false) {
       document.getElementById('brightness-value').textContent = value;
-      if (!silent && !autoBrightness) {
+      
+      const motionOff = !ledOn && motionEnabled;
+      // Не отправляем изменения, если лента погашена движением
+      if (!silent && !autoBrightness && !motionOff) {
         sendGlobalEffectSettings();
       }
     }
@@ -1877,7 +1884,12 @@
       sendGlobalEffectSettings();
     }
 
+    // Обновленная функция отправки глобальных настроек
     function sendGlobalEffectSettings() {
+      const motionOff = !ledOn && motionEnabled;
+      // Если лента погашена движением - не отправляем команды изменения яркости
+      if (motionOff) return;
+      
       const effect = parseInt(document.getElementById('effect-select').value);
       const brightness = parseInt(document.getElementById('brightness-slider').value);
       const speed = parseInt(document.getElementById('speed-slider').value);
@@ -1950,10 +1962,14 @@
       updateTemperatureControlState();
     }
 
+    // Обновленная функция для изменения яркости зоны
     function updateZoneBrightness(zoneNum, value) {
       document.getElementById(`zone${zoneNum}-brightness-value`).textContent = value;
       zoneSettings[`zone${zoneNum}`].brightness = parseInt(value);
-      if (!autoBrightness) {
+      
+      const motionOff = !ledOn && motionEnabled;
+      // Не отправляем изменения, если лента погашена движением
+      if (!autoBrightness && !motionOff) {
         sendZoneEffectSettings(zoneNum);
       }
     }
@@ -2032,7 +2048,12 @@
       sendZoneEffectSettings(zoneNum);
     }
 
+    // Обновленная функция для отправки настроек зоны
     function sendZoneEffectSettings(zoneNum) {
+      const motionOff = !ledOn && motionEnabled;
+      // Если лента погашена движением - не отправляем команды изменения яркости
+      if (motionOff) return;
+      
       const settings = zoneSettings[`zone${zoneNum}`];
       const effect = settings.effect;
       const brightness = settings.brightness;

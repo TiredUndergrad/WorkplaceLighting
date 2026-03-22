@@ -278,7 +278,7 @@ void LedStripController::effectTemperature(const EffectParams& p, uint8_t zoneIn
   
   // p.temp уже нормализован в диапазоне 0-255 на сервере
   // Конвертируем обратно в Кельвины для логики
-  uint16_t kelvin = 2000 + (p.temp * 6000 / 255);
+  uint16_t kelvin = 2000 + (p.temp * 8000 / 255);
   
   uint8_t hue;
   uint8_t saturation;
