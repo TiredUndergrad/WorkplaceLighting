@@ -285,21 +285,21 @@ void LedStripController::effectTemperature(const EffectParams& p, uint8_t zoneIn
   uint8_t brightness = 255; // Яркость цвета
   
   if (kelvin <= 6000) {
-      // От 2000K до 6000K: hue = 32 (желто-оранжевый)
-      hue = 32;
+      // От 2000K до 6000K: hue от 24 до 40
+      hue = map(kelvin, 2000, 6000, 24, 50);
       
       // Насыщенность от 255 (2000K) до 0 (6000K)
-      // map(value, fromLow, fromHigh, toLow, toHigh)
       saturation = map(kelvin, 2000, 6000, 255, 0);
   } else {
-      // От 6000K до 10000K: hue = 141 (голубой/синий)
+      // От 6000K до 10000K: hue от 40 до 141
+      // hue = map(kelvin, 6000, 10000, 50, 141);
       hue = 141;
-      
       // Насыщенность от 0 (6000K) до 87 (10000K)
       saturation = map(kelvin, 6000, 10000, 0, 87);
   }
   
   // Ограничиваем значения
+  hue = constrain(hue, 0, 255);
   saturation = constrain(saturation, 0, 255);
   
   for (int i = 0; i < count; i++) {
