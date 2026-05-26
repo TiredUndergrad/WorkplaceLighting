@@ -481,24 +481,50 @@ void MyRequestHandler::handleSetZoneEffect() {
     return;
   }
   
-  uint8_t zone = 0, effect = 0, val = 128, speed = 1, color = 0, temp = 0, sat = 255, hsvVal = 255;
-  bool enabled = true; // По умолчанию включено
+  uint8_t zone = 0;
   
   for (size_t i = 0; i < _server.args(); i++) {
     String name = _server.argName(i);
     String value = _server.arg(i);
     if (name == "zone") zone = (uint8_t)value.toInt();
-    else if (name == "effect") effect = (uint8_t)value.toInt();
-    else if (name == "val") val = (uint8_t)value.toInt();
-    else if (name == "speed") speed = (uint8_t)value.toInt();
-    else if (name == "color") color = (uint8_t)value.toInt();
-    else if (name == "temp") temp = (uint8_t)value.toInt();
-    else if (name == "sat") sat = (uint8_t)value.toInt();
-    else if (name == "hsvval") hsvVal = (uint8_t)value.toInt();
-    else if (name == "enabled") enabled = (value.toInt() == 1);
   }
   
   if (zone >= 1 && zone <= 3) {
+    SplittingParams current = _ledController->getSplittingParams();
+    uint8_t effect = 1, val = 128, speed = 1, color = 0, temp = 32, sat = 255, hsvVal = 255;
+    bool enabled = true;
+
+    switch (zone) {
+      case 1:
+        effect = current.effect1; val = current.val1; speed = current.speed1;
+        color = current.color1; temp = current.temp1; sat = current.sat1;
+        hsvVal = current.hsvVal1; enabled = current.enabled1;
+        break;
+      case 2:
+        effect = current.effect2; val = current.val2; speed = current.speed2;
+        color = current.color2; temp = current.temp2; sat = current.sat2;
+        hsvVal = current.hsvVal2; enabled = current.enabled2;
+        break;
+      case 3:
+        effect = current.effect3; val = current.val3; speed = current.speed3;
+        color = current.color3; temp = current.temp3; sat = current.sat3;
+        hsvVal = current.hsvVal3; enabled = current.enabled3;
+        break;
+    }
+
+    for (size_t i = 0; i < _server.args(); i++) {
+      String name = _server.argName(i);
+      String value = _server.arg(i);
+      if (name == "effect") effect = (uint8_t)value.toInt();
+      else if (name == "val") val = (uint8_t)value.toInt();
+      else if (name == "speed") speed = (uint8_t)value.toInt();
+      else if (name == "color") color = (uint8_t)value.toInt();
+      else if (name == "temp") temp = (uint8_t)value.toInt();
+      else if (name == "sat") sat = (uint8_t)value.toInt();
+      else if (name == "hsvval") hsvVal = (uint8_t)value.toInt();
+      else if (name == "enabled") enabled = (value.toInt() == 1);
+    }
+
     _ledController->setZoneEffect(zone - 1, effect, val, speed, color, temp, sat, hsvVal, enabled);
     _server.send(200, "application/json", "{\"status\":\"ok\"}");
   } else {

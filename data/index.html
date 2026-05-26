@@ -923,7 +923,7 @@
         <label for="effect-select">Эффект:</label>
         <select id="effect-select" onchange="updateGlobalEffect()">
           <option value="0">Статический цвет</option>
-          <option value="1">Температура белого</option>
+          <option value="1" selected>Температура белого</option>
           <option value="2">Бегущая радуга</option>
           <option value="3">Пульсация</option>
           <option value="4">Мерцание</option>
@@ -985,9 +985,9 @@
 
       <!-- Температура белого -->
       <div class="control-group" id="temperature-group">
-        <label for="temperature-slider">Цветовая температура: <span id="temperature-value">6000</span> K</label>
+        <label for="temperature-slider">Цветовая температура: <span id="temperature-value">3000</span> K</label>
         <div class="temperature-slider-wrapper" id="temperature-slider-wrapper">
-          <input type="range" id="temperature-slider" min="2000" max="10000" value="6000" step="100"
+          <input type="range" id="temperature-slider" min="2000" max="10000" value="3000" step="100"
                  oninput="updateGlobalTemperature(this.value)">
           <div class="temperature-scale">
             <span>2000K (теплый)</span>
@@ -1037,7 +1037,7 @@
           <label for="zone1-effect">Эффект:</label>
           <select id="zone1-effect" onchange="updateZoneEffect(1)">
             <option value="0">Статический цвет</option>
-            <option value="1">Температура белого</option>
+            <option value="1" selected>Температура белого</option>
             <option value="2">Бегущая радуга</option>
             <option value="3">Пульсация</option>
             <option value="4">Мерцание</option>
@@ -1098,9 +1098,9 @@
 
         <!-- Температура белого для зоны 1 с подписями -->
         <div class="control-group" id="zone1-temperature-group">
-          <label for="zone1-temperature">Цветовая температура: <span id="zone1-temperature-value">6000</span> K</label>
+          <label for="zone1-temperature">Цветовая температура: <span id="zone1-temperature-value">3000</span> K</label>
           <div class="temperature-slider-wrapper" id="zone1-temperature-wrapper">
-            <input type="range" id="zone1-temperature" min="2000" max="10000" value="6000" step="100"
+            <input type="range" id="zone1-temperature" min="2000" max="10000" value="3000" step="100"
                    oninput="updateZoneTemperature(1, this.value)">
             <div class="temperature-scale">
               <span>2000K (теплый)</span>
@@ -1137,7 +1137,7 @@
           <label for="zone2-effect">Эффект:</label>
           <select id="zone2-effect" onchange="updateZoneEffect(2)">
             <option value="0">Статический цвет</option>
-            <option value="1">Температура белого</option>
+            <option value="1" selected>Температура белого</option>
             <option value="2">Бегущая радуга</option>
             <option value="3">Пульсация</option>
             <option value="4">Мерцание</option>
@@ -1198,9 +1198,9 @@
 
         <!-- Температура белого для зоны 2 с подписями -->
         <div class="control-group" id="zone2-temperature-group">
-          <label for="zone2-temperature">Цветовая температура: <span id="zone2-temperature-value">6000</span> K</label>
+          <label for="zone2-temperature">Цветовая температура: <span id="zone2-temperature-value">3000</span> K</label>
           <div class="temperature-slider-wrapper" id="zone2-temperature-wrapper">
-            <input type="range" id="zone2-temperature" min="2000" max="10000" value="6000" step="100"
+            <input type="range" id="zone2-temperature" min="2000" max="10000" value="3000" step="100"
                    oninput="updateZoneTemperature(2, this.value)">
             <div class="temperature-scale">
               <span>2000K (теплый)</span>
@@ -1237,7 +1237,7 @@
           <label for="zone3-effect">Эффект:</label>
           <select id="zone3-effect" onchange="updateZoneEffect(3)">
             <option value="0">Статический цвет</option>
-            <option value="1">Температура белого</option>
+            <option value="1" selected>Температура белого</option>
             <option value="2">Бегущая радуга</option>
             <option value="3">Пульсация</option>
             <option value="4">Мерцание</option>
@@ -1298,9 +1298,9 @@
 
         <!-- Температура белого для зоны 3 с подписями -->
         <div class="control-group" id="zone3-temperature-group">
-          <label for="zone3-temperature">Цветовая температура: <span id="zone3-temperature-value">6000</span> K</label>
+          <label for="zone3-temperature">Цветовая температура: <span id="zone3-temperature-value">3000</span> K</label>
           <div class="temperature-slider-wrapper" id="zone3-temperature-wrapper">
-            <input type="range" id="zone3-temperature" min="2000" max="10000" value="6000" step="100"
+            <input type="range" id="zone3-temperature" min="2000" max="10000" value="3000" step="100"
                    oninput="updateZoneTemperature(3, this.value)">
             <div class="temperature-scale">
               <span>2000K (теплый)</span>
@@ -1350,11 +1350,11 @@
     let currentGlobalRGB = { r: 255, g: 255, b: 255 };
     
     let zoneSettings = {
-      zone1: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
+      zone1: { effect: 1, brightness: 128, speed: 1, color: 0, temp: 3000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true },
-      zone2: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
+      zone2: { effect: 1, brightness: 128, speed: 1, color: 0, temp: 3000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true },
-      zone3: { effect: 0, brightness: 128, speed: 1, color: 0, temp: 6000, autoTemp: false,
+      zone3: { effect: 1, brightness: 128, speed: 1, color: 0, temp: 3000, autoTemp: false,
                h: 0, s: 100, v: 100, r: 255, g: 255, b: 255, enabled: true }
     };
     let activeZone = 1;
@@ -1778,12 +1778,12 @@
     // Включение/выключение конкретной зоны
     function toggleZone(zoneNum, enabled) {
       zoneSettings[`zone${zoneNum}`].enabled = enabled;
-      sendZoneEffectSettings(zoneNum);
+      sendZoneEnabledSetting(zoneNum, enabled);
       console.log(`Zone ${zoneNum} ${enabled ? 'enabled' : 'disabled'}`);
     }
 
     // Установка режима работы (общий/индивидуальный)
-    function setMode(mode) {
+    function applyModeUI(mode) {
       currentMode = mode;
       
       document.getElementById('mode-global').classList.remove('active');
@@ -1800,13 +1800,23 @@
         globalSection.style.display = 'none';
         individualSection.style.display = 'block';
       }
+    }
+
+    function setMode(mode, syncServer = true) {
+      applyModeUI(mode);
+      if (!syncServer) return;
       
       const params = new URLSearchParams({ mode: mode });
       fetch('/setmode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString()
-      }).catch(error => console.error('Error setting mode:', error));
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to set mode');
+          return loadSettings();
+        })
+        .catch(error => console.error('Error setting mode:', error));
     }
 
     function showZone(zoneNum) {
@@ -2095,6 +2105,27 @@
       }).catch(error => console.error('Error sending zone effect settings:', error));
     }
 
+    function sendZoneEnabledSetting(zoneNum, enabled) {
+      const params = new URLSearchParams({
+        zone: zoneNum,
+        enabled: enabled ? 1 : 0
+      });
+
+      fetch('/setzoneeffect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to toggle zone');
+          return loadSettings();
+        })
+        .catch(error => {
+          console.error('Error toggling zone:', error);
+          loadSettings();
+        });
+    }
+
     function toggleAutoBrightness() {
       autoBrightness = document.getElementById('auto-brightness').checked;
       const settings = document.getElementById('als-settings');
@@ -2220,11 +2251,11 @@
     }
 
     function loadSettings() {
-      fetch('/getsettings')
+      return fetch('/getsettings')
         .then(response => response.json())
         .then(data => {
           if (data.mode) {
-            setMode(data.mode);
+            setMode(data.mode, false);
           }
           
           if (data.effect !== undefined) {
@@ -2243,6 +2274,16 @@
           }
           
           // Загрузка HSV данных
+          if (data.color !== undefined) {
+            const h = Math.round(data.color * 360 / 255);
+            currentGlobalHSV.h = h;
+            const hueEl = document.getElementById('global-hue');
+            if (hueEl) {
+              hueEl.value = h;
+              document.getElementById('global-hue-value').textContent = h;
+            }
+          }
+
           if (data.saturation !== undefined && data.hsvval !== undefined) {
             const s = Math.round(data.saturation * 100 / 255);
             const v = Math.round(data.hsvval * 100 / 255);
@@ -2255,7 +2296,7 @@
             }
             
             // Обновляем RGB из HSV
-            const rgb = hsvToRgb(currentGlobalHSV.h, s, 100);
+            const rgb = hsvToRgb(currentGlobalHSV.h, s, v);
             currentGlobalRGB = rgb;
             document.getElementById('global-red').value = rgb.r;
             document.getElementById('global-red-value').textContent = rgb.r;
@@ -2271,21 +2312,26 @@
           for (let i = 1; i <= 3; i++) {
             const zoneData = data[`zone${i}`];
             if (zoneData) {
-              zoneSettings[`zone${i}`].effect = zoneData.effect || 0;
-              zoneSettings[`zone${i}`].brightness = zoneData.brightness || 128;
-              zoneSettings[`zone${i}`].speed = zoneData.speed || 1;
-              zoneSettings[`zone${i}`].temp = zoneData.temp || 6000;
+              zoneSettings[`zone${i}`].effect = zoneData.effect !== undefined ? zoneData.effect : 1;
+              zoneSettings[`zone${i}`].brightness = zoneData.brightness !== undefined ? zoneData.brightness : 128;
+              zoneSettings[`zone${i}`].speed = zoneData.speed !== undefined ? zoneData.speed : 1;
+              zoneSettings[`zone${i}`].temp = zoneData.temp !== undefined ? zoneData.temp : 3000;
               zoneSettings[`zone${i}`].enabled = zoneData.enabled !== undefined ? zoneData.enabled : true;
               
               if (zoneData.hue !== undefined) {
                 zoneSettings[`zone${i}`].h = zoneData.hue;
+              } else if (zoneData.color !== undefined) {
+                zoneSettings[`zone${i}`].h = Math.round(zoneData.color * 360 / 255);
               }
               if (zoneData.saturation !== undefined) {
                 zoneSettings[`zone${i}`].s = Math.round(zoneData.saturation * 100 / 255);
               }
+              if (zoneData.hsvval !== undefined) {
+                zoneSettings[`zone${i}`].v = Math.round(zoneData.hsvval * 100 / 255);
+              }
               
               // Обновляем RGB из HSV
-              const rgb = hsvToRgb(zoneSettings[`zone${i}`].h, zoneSettings[`zone${i}`].s, 100);
+              const rgb = hsvToRgb(zoneSettings[`zone${i}`].h, zoneSettings[`zone${i}`].s, zoneSettings[`zone${i}`].v);
               zoneSettings[`zone${i}`].r = rgb.r;
               zoneSettings[`zone${i}`].g = rgb.g;
               zoneSettings[`zone${i}`].b = rgb.b;

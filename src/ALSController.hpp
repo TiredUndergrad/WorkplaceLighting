@@ -8,8 +8,10 @@
 
 class ALSController {
 public:
+    // Управляет автояркостью и автотемпературой по датчику освещенности.
     ALSController();
     void reset();
+    // Основной тик: фильтрует свет и при необходимости корректирует ленты.
     void update(uint16_t ambientLight, const AdvParams& params,
                 LedStripController* led, bool motionActive);
     String getStatusForLog(uint16_t ambientLight, const AdvParams& params) const;
@@ -23,10 +25,12 @@ public:
     uint16_t getRecommendedColorTemperature(uint16_t ambientLight) const;
 
 private:
+    // Отфильтрованные значения датчика и оценка света без вклада лент.
     LowPassFilter _filter;              // Фильтр для сырых показаний датчика
     uint16_t _lastRawFiltered;           // Отфильтрованное общее освещение (для яркости)
     uint16_t _lastAmbientWithoutStrip;   // Оценка естественного света (для температуры)
     
+    // Фазы плавной подстройки яркости к целевому уровню.
     enum AdjustmentPhase {
         PHASE_IDLE,
         PHASE_WAIT_START,
@@ -39,6 +43,7 @@ private:
     int _lastBrightness;
     unsigned long _currentAdjustInterval;
 
+    // Таблица вклада ленты в показания датчика при разных температурах.
     struct TemperatureCalibrationPoint {
         uint16_t temperature;
         float contribution[256];
@@ -53,6 +58,7 @@ private:
 
     CalibrationData _cal;
 
+    // Состояние пошаговой калибровки автотемпературы.
     enum AutoTempCalibPhase {
         CAL_PHASE_IDLE,
         CAL_PHASE_WAIT_DARK,
@@ -77,15 +83,16 @@ private:
     uint8_t _autoTempProgress = 0;
     uint16_t _currentTempK = 4000;
     
-    // Константы
-    static const unsigned long CYCLE_INTERVAL = 3000;
-    static const unsigned long MIN_ADJUST_INTERVAL = 200;
-    static const unsigned long MAX_ADJUST_INTERVAL = 500;
-    static const uint8_t BRIGHTNESS_STEP = 1;
-    static const uint8_t HYSTERESIS = 50;
-    static const uint16_t CLOSE_THRESHOLD = 500;
-    static const float AMBIENT_SMOOTHING; // Коэффициент сглаживания для естественного света
+    // Пороговые значения и интервалы регулировки.
+    static const unsigned long CYCLE_INTERVAL = 3000;      // Пауза между циклами проверки автояркости.
+    static const unsigned long MIN_ADJUST_INTERVAL = 200;  // Минимальная задержка между шагами изменения яркости.
+    static const unsigned long MAX_ADJUST_INTERVAL = 500;  // Максимальная задержка между шагами изменения яркости.
+    static const uint8_t BRIGHTNESS_STEP = 1;              // Размер одного шага изменения яркости.
+    static const uint8_t HYSTERESIS = 50;                  // Допустимая зона отклонения от целевой освещенности.
+    static const uint16_t CLOSE_THRESHOLD = 500;           // Граница, после которой подстройка считается близкой к цели.
+    static const float AMBIENT_SMOOTHING;                  // Коэффициент сглаживания для естественного света.
 
+    // Внутренние шаги регулировки и калибровки.
     void startAdjustmentCycle();
     void performAdjustmentStep(uint16_t target, uint16_t current, LedStripController* led);
     bool isTargetReached(uint16_t target, uint16_t current) const;
