@@ -24,6 +24,9 @@ uint8_t motionMaxBrightness = 200;
 
 const int ledPin = 2;
 const int motionSensorPin = 12;
+const int wifiApButtonPin = 19;
+const unsigned long wifiApButtonHoldMs = 3000;
+const unsigned long wifiApButtonDebounceMs = 50;
 
 // Определяем количество светодиодов для каждой ленты
 #define NUM_LEDS_1 60
@@ -47,9 +50,46 @@ WebServer server(80);
 MyRequestHandler handler(server, ledPin, &ledController, &alsController);
 FTPServer ftpSrv(SPIFFS);
 
+void handleWiFiApButton() {
+  static bool lastRawPressed = false;
+  static bool stablePressed = false;
+  static bool holdHandled = false;
+  static unsigned long lastRawChangeMs = 0;
+  static unsigned long pressedSinceMs = 0;
+
+  const unsigned long now = millis();
+  const bool rawPressed = (digitalRead(wifiApButtonPin) == LOW);
+
+  if (rawPressed != lastRawPressed) {
+    lastRawPressed = rawPressed;
+    lastRawChangeMs = now;
+  }
+
+  if (now - lastRawChangeMs < wifiApButtonDebounceMs) {
+    return;
+  }
+
+  if (rawPressed != stablePressed) {
+    stablePressed = rawPressed;
+    holdHandled = false;
+    pressedSinceMs = stablePressed ? now : 0;
+  }
+
+  if (stablePressed && !holdHandled && now - pressedSinceMs >= wifiApButtonHoldMs) {
+    holdHandled = true;
+    Serial.println("WiFi AP button held for 3 seconds.");
+
+    if (handler.switchToAccessPointMode()) {
+      delay(500);
+      ESP.restart();
+    }
+  }
+}
+
 void setup() {
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
+  pinMode(wifiApButtonPin, INPUT_PULLUP);
   Serial.begin(115200);
   Wire.begin();
 
@@ -92,6 +132,7 @@ void loop() {
   
   server.handleClient();
   ftpSrv.handleFTP();
+  handleWiFiApButton();
 
   apds.readAmbientLight(ambient_light);
 

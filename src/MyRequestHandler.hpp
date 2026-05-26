@@ -31,6 +31,7 @@ public:
     void handleCSS();
     void handleWiFiStatus();
     void handleDisconnectWiFi();
+    bool switchToAccessPointMode();
     
     // Обработчики для LED контроллера
     void handleSetMode();           // Новый: установка режима (общий/индивидуальный)
@@ -54,6 +55,7 @@ private:
     ALSController* _alsController;
     
     void loadWiFiSettings();
+    bool hasStoredWiFiSettings();
     void checkIndexFile();  // Метод для проверки файла
     String getContentType(String filename); // Определение MIME-типа
 };

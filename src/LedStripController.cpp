@@ -19,33 +19,33 @@ LedStripController::LedStripController(CRGB* leds1, uint16_t count1,
   _ledCounts[2] = count3;
 
   // Инициализация параметров эффекта по умолчанию для всех лент
-  _globalEffectParams = {0, 128, 1, 0, 1, 255, 255};
+  _globalEffectParams = {1, 128, 1, 0, 32, 255, 255};
 
   // Инициализация параметров разделения (три ленты)
   _splittingParams.numSplit = 3;
-  _splittingParams.effect1 = 0;
+  _splittingParams.effect1 = 1;
   _splittingParams.val1 = 128;
   _splittingParams.speed1 = 1;
   _splittingParams.color1 = 0;
-  _splittingParams.temp1 = 1;
+  _splittingParams.temp1 = 32;
   _splittingParams.sat1 = 255;
   _splittingParams.hsvVal1 = 255;
   _splittingParams.enabled1 = true;
 
-  _splittingParams.effect2 = 0;
+  _splittingParams.effect2 = 1;
   _splittingParams.val2 = 128;
   _splittingParams.speed2 = 1;
   _splittingParams.color2 = 0;
-  _splittingParams.temp2 = 1;
+  _splittingParams.temp2 = 32;
   _splittingParams.sat2 = 255;
   _splittingParams.hsvVal2 = 255;
   _splittingParams.enabled2 = true;
 
-  _splittingParams.effect3 = 0;
+  _splittingParams.effect3 = 1;
   _splittingParams.val3 = 128;
   _splittingParams.speed3 = 1;
   _splittingParams.color3 = 0;
-  _splittingParams.temp3 = 1;
+  _splittingParams.temp3 = 32;
   _splittingParams.sat3 = 255;
   _splittingParams.hsvVal3 = 255;
   _splittingParams.enabled3 = true;

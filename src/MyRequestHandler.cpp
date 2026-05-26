@@ -374,7 +374,27 @@ void MyRequestHandler::handleWiFiStatus() {
   _server.send(200, "application/json", json);
 }
 
-void MyRequestHandler::handleDisconnectWiFi() {
+bool MyRequestHandler::hasStoredWiFiSettings() {
+  WiFiSettings settings;
+  EEPROM.begin(sizeof(WiFiSettings));
+  EEPROM.get(0, settings);
+  EEPROM.end();
+
+  return settings.ssid[0] != '\0';
+}
+
+bool MyRequestHandler::switchToAccessPointMode() {
+  const bool isApMode = (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA);
+  const bool isConnected = (WiFi.status() == WL_CONNECTED);
+  const bool hasSettings = hasStoredWiFiSettings();
+
+  if (isApMode && !isConnected && !hasSettings) {
+    Serial.println("Access Point mode is already active; WiFi settings are empty.");
+    return false;
+  }
+
+  Serial.println("Switching to Access Point mode...");
+
   WiFi.disconnect(true);
   delay(100);
   
@@ -383,10 +403,30 @@ void MyRequestHandler::handleDisconnectWiFi() {
   EEPROM.put(0, emptySettings);
   EEPROM.commit();
   EEPROM.end();
+
+  _isConfigured = false;
+
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("ESP32-Config");
+  delay(100);
+
+  Serial.println("Access Point mode prepared");
+  Serial.print("AP IP address: ");
+  Serial.println(WiFi.softAPIP());
+
+  return true;
+}
+
+void MyRequestHandler::handleDisconnectWiFi() {
+  const bool changedMode = switchToAccessPointMode();
   
-  _server.send(200, "application/json", "{\"status\":\"disconnected\",\"message\":\"Device will restart in AP mode\"}");
-  delay(500);
-  ESP.restart();
+  if (changedMode) {
+    _server.send(200, "application/json", "{\"status\":\"disconnected\",\"message\":\"Device will restart in AP mode\"}");
+    delay(500);
+    ESP.restart();
+  } else {
+    _server.send(200, "application/json", "{\"status\":\"already_ap\",\"message\":\"Device is already in AP mode\"}");
+  }
 }
 
 // Новый обработчик для установки режима работы (общий/индивидуальный)
